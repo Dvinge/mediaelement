@@ -29,6 +29,9 @@
 			"mejs.play": "Přehrát",
 			"mejs.pause": "Pozastavit",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Posuvný běžec nastavení času",
 			"mejs.time-help-text": "Použijte tlačítka se šipkami doleva / doprava pro posun o jednu vteřinu, tlačítka se šipkami nahoru / dolů pro posun o deset vteřin.",

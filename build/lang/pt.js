@@ -17,7 +17,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Ecrã completo",			
 			"mejs.play": "Reprodução",
-			"mejs.pause": "Pausa",			
+			"mejs.pause": "Pausa",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Deslizador do tempo",
 			"mejs.time-help-text": "Use as teclas das setas para a esquerda/direita para avançar um segundo, e as setas para cima/baixo para avançar dez segundos.",
 			//"mejs.live-broadcast" : "Live Broadcast",

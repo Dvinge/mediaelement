@@ -4,6 +4,8 @@ import window from 'global/window';
 import document from 'global/document';
 import mejs from './core/mejs';
 import MediaElement from './core/mediaelement';
+import DefaultPlayer from './players/default';
+import ChromecastPlayer from './players/chromecast';
 import i18n from './core/i18n';
 import {
 	IS_FIREFOX,
@@ -116,6 +118,38 @@ export const config = {
 	pauseOtherPlayers: true,
 	// Number of decimal places to show if frames are shown
 	secondsDecimalLength: 0,
+	// Chromecast configuration
+	cast: {
+		/**
+		 * Title display
+		 * @type {String}
+		 */
+		title: null,
+		/**
+		 * Chromecast App ID
+		 * @type {String}
+		 */
+		appID: null,
+		/**
+		 * Chromecast type of policy
+		 * `origin`: Auto connect from same appId and page origin (default)
+		 * `tab`: Auto connect from same appId, page origin, and tab
+		 * `page`: No auto connect
+		 *
+		 * @type {String}
+		 */
+		policy: 'origin',
+		/**
+		 * Whether to load tracks or not through Chromecast
+		 *
+		 * In order to process tracks correctly, `tracks` feature must be enable on the player configuration
+		 * and user MUST set a custom receiver application.
+		 * @see https://github.com/googlecast/CastReferencePlayer
+		 * @see https://developers.google.com/cast/docs/receiver_apps
+		 * @type {Boolean}
+		 */
+		enableTracks: false,
+	},
 	// Array of keyboard actions such as play/pause
 	keyActions: [
 		{
@@ -123,20 +157,20 @@ export const config = {
 				32, // SPACE
 				179 // GOOGLE play/pause button
 			],
-			action: (player, media) => {
+			action: () => {
 
 				if (!IS_FIREFOX) {
-					if (media.paused || media.ended) {
-						media.play();
+					if (t.paused || t.ended) {
+						t.play();
 					} else {
-						media.pause();
+						t.pause();
 					}
 				}
 			}
 		},
 		{
 			keys: [38], // UP
-			action: (player, media) => {
+			action: (player) => {
 
 				if (player.container.querySelector(`.${config.classPrefix}volume-button>button`).matches(':focus') ||
 					player.container.querySelector(`.${config.classPrefix}volume-slider`).matches(':focus')) {
@@ -147,17 +181,17 @@ export const config = {
 					player.startControlsTimer();
 				}
 
-				const newVolume = Math.min(media.volume + 0.1, 1);
-				media.setVolume(newVolume);
+				const newVolume = Math.min(t.getVolume() + 0.1, 1);
+				t.setVolume(newVolume);
 				if (newVolume > 0) {
-					media.setMuted(false);
+					t.setMuted(false);
 				}
 
 			}
 		},
 		{
 			keys: [40], // DOWN
-			action: (player, media) => {
+			action: (player) => {
 
 				if (player.container.querySelector(`.${config.classPrefix}volume-button>button`).matches(':focus') ||
 					player.container.querySelector(`.${config.classPrefix}volume-slider`).matches(':focus')) {
@@ -169,11 +203,11 @@ export const config = {
 					player.startControlsTimer();
 				}
 
-				const newVolume = Math.max(media.volume - 0.1, 0);
-				media.setVolume(newVolume);
+				const newVolume = Math.max(t.volume - 0.1, 0);
+				t.setVolume(newVolume);
 
 				if (newVolume <= 0.1) {
-					media.setMuted(true);
+					t.setMuted(true);
 				}
 
 			}
@@ -267,14 +301,6 @@ class MediaElementPlayer {
 			element = typeof node === 'string' ? document.getElementById(node) : node
 		;
 
-		t.hasFocus = false;
-
-		t.controlsAreVisible = true;
-
-		t.controlsEnabled = true;
-
-		t.controlsTimer = null;
-
 		// enforce object, even without "new" (via John Resig)
 		if (!(t instanceof MediaElementPlayer)) {
 			return new MediaElementPlayer(element, o);
@@ -293,6 +319,16 @@ class MediaElementPlayer {
 		if (t.media.player !== undefined) {
 			return t.media.player;
 		}
+
+		t.hasFocus = false;
+
+		t.controlsAreVisible = true;
+
+		t.controlsEnabled = true;
+
+		t.controlsTimer = null;
+
+		t.currentMediaTime = 0;
 
 		// try to get options from data-mejsoptions
 		if (o === undefined) {
@@ -540,6 +576,8 @@ class MediaElementPlayer {
 			t.node.style.display = 'none';
 		}
 
+		mejs.MepDefaults = meOptions;
+
 		// create MediaElement shim
 		new MediaElement(t.media, meOptions, t.mediaFiles);
 
@@ -549,7 +587,155 @@ class MediaElementPlayer {
 			t.container.dispatchEvent(event);
 		}
 
+		if (t.isVideo && t.options.features.indexOf('chromecast') > -1) {
+			window.__onGCastApiAvailable = (isAvailable) => {
+				const
+					mediaType = getTypeFromFile(t.media.getSrc()).toLowerCase(),
+					canPlay = mediaType && ['application/x-mpegurl', 'vnd.apple.mpegurl', 'application/dash+xml', 'video/mp4'].indexOf(mediaType) > -1
+				;
+
+				if (isAvailable && canPlay) {
+					t._initializeCastPlayer();
+				}
+			};
+
+			dom.loadScript('https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1');
+		}
+
 		return t;
+	}
+
+	/**
+	 *
+	 * @private
+	 */
+	_initializeCastPlayer () {
+		let origin;
+
+		switch (this.options.cast.policy) {
+			case 'tab':
+				origin = 'TAB_AND_ORIGIN_SCOPED';
+				break;
+			case 'page':
+				origin = 'PAGE_SCOPED';
+				break;
+			default:
+				origin = 'ORIGIN_SCOPED';
+				break;
+		}
+
+		cast.framework.CastContext.getInstance().setOptions({
+			receiverApplicationId: this.options.cast.appID || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+			autoJoinPolicy: chrome.cast.AutoJoinPolicy[origin]
+		});
+
+		this.remotePlayer = new cast.framework.RemotePlayer();
+		this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
+		this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
+			this._switchPlayer.bind(this)
+		);
+	}
+
+	/**
+	 *
+	 * @private
+	 */
+	_switchPlayer () {
+		this.proxy.pause();
+		if (cast && cast.framework) {
+			const context = cast.framework.CastContext.getInstance();
+
+			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, (e) => {
+				if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+					this.chromecastLayer.style.display = 'none';
+					this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
+				} else {
+					this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
+					this.chromecastLayer.style.display = '';
+				}
+
+				setTimeout(() => {
+					this.setPlayerSize(this.width, this.height);
+					this.setControlsSize();
+				}, 0);
+			});
+
+			if (this.remotePlayer.isConnected) {
+				this._setupRemotePlayer();
+				return;
+			}
+		}
+		this._setDefaultPlayer();
+	}
+
+	_setDefaultPlayer () {
+		this.proxy = new DefaultPlayer(this.media, this.isVideo, this.options.classPrefix);
+		if (this.chromecastLayer) {
+			this.chromecastLayer.style.display = 'none';
+		}
+		if (this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`)) {
+			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
+		}
+		this.setCurrentTime(this.currentMediaTime);
+		if (this.getCurrentTime() > 0 && !IS_IOS && !IS_ANDROID) {
+			this.play();
+		}
+	}
+
+	/**
+	 *
+	 * @private
+	 */
+	_setupRemotePlayer () {
+		this.proxy = new ChromecastPlayer(this.remotePlayer, this.remotePlayerController, this.media, this.options.cast.enableTracks);
+
+		const
+			context = cast.framework.CastContext.getInstance(),
+			castSession = context.getCurrentSession(),
+			deviceInfo = this.layers.querySelector(`.${this.options.classPrefix}chromecast-info`).querySelector('.device')
+		;
+
+		context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, (e) => {
+			if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+				deviceInfo.innerText = '';
+				this.chromecastLayer.style.display = 'none';
+				this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
+			} else {
+				deviceInfo.innerText = castSession.getCastDevice().friendlyName;
+				this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
+				this.chromecastLayer.style.display = '';
+			}
+
+			setTimeout(() => {
+				this.setPlayerSize(this.width, this.height);
+				this.setControlsSize();
+			}, 0);
+		});
+
+		if (this.options.cast.enableTracks === true) {
+			const captions = t.captionsButton !== undefined ?
+				t.captionsButton.querySelectorAll('input[type=radio]') : null;
+
+			if (captions !== null) {
+				for (let i = 0, total = captions.length; i < total; i++) {
+					captions[i].addEventListener('click', function () {
+						const
+							trackId = parseInt(captions[i].id.replace(/^.*?track_(\d+)_.*$/, "$1")),
+							setTracks = captions[i].value === 'none' ? [] : [trackId],
+							tracksInfo = new chrome.cast.media.EditTracksInfoRequest(setTracks)
+						;
+
+						castSession.getMediaSession().editTracksInfo(tracksInfo, () => {}, (e) => {
+							console.error(e);
+						});
+					});
+				}
+			}
+		}
+
+		this.media.addEventListener('timeupdate', () => {
+			this.currentMediaTime = this.media.getCurrentTime();
+		});
 	}
 
 	showControls (doAnimation) {
@@ -601,10 +787,10 @@ class MediaElementPlayer {
 		doAnimation = doAnimation === undefined || doAnimation;
 
 		if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls ||
-			(t.media.paused && t.media.readyState === 4 && ((!t.options.hideVideoControlsOnLoad &&
+			(t.paused() && t.readyState() === 4 && ((!t.options.hideVideoControlsOnLoad &&
 			t.media.currentTime <= 0) || (!t.options.hideVideoControlsOnPause && t.media.currentTime > 0))) ||
-			(t.isVideo && !t.options.hideVideoControlsOnLoad && !t.media.readyState) ||
-			t.media.ended)) {
+			(t.isVideo && !t.options.hideVideoControlsOnLoad && !t.readyState()) ||
+			t.ended())) {
 			return;
 		}
 
@@ -626,7 +812,6 @@ class MediaElementPlayer {
 				});
 			}
 		} else {
-
 			// hide main controls
 			dom.addClass(t.controls, `${t.options.classPrefix}offscreen`);
 			t.controls.style.display = '';
@@ -762,6 +947,9 @@ class MediaElementPlayer {
 					}
 				}
 			}
+
+			// Enable default actions
+			t._setDefaultPlayer(t.media);
 
 			const event = createEvent('controlsready', t.container);
 			t.container.dispatchEvent(event);
@@ -1030,10 +1218,12 @@ class MediaElementPlayer {
 
 	/**
 	 *
-	 * @param {Event} e
+	 * @param e
+	 * @param media
+	 * @param node
 	 * @private
 	 */
-	_handleError (e) {
+	_handleError (e, media, node) {
 		const t = this;
 
 		if (t.controls) {
@@ -1048,7 +1238,7 @@ class MediaElementPlayer {
 
 		// Tell user that the file cannot be played
 		if (t.options.error) {
-			t.options.error(e);
+			t.options.error(e, media, node);
 		}
 	}
 
@@ -1408,7 +1598,7 @@ class MediaElementPlayer {
 			t.controls.appendChild(element);
 			const children = t.controls.children;
 			for (let i = 0, total = children.length; i < total; i++) {
-				if (element == children[i]) {
+				if (element === children[i]) {
 					t.featurePosition[key] = i;
 					break;
 				}
@@ -1541,6 +1731,56 @@ class MediaElementPlayer {
 		}
 	}
 
+	buildchromecast (player, controls, layers, media) {
+
+		const
+			t = this,
+			button = document.createElement('div'),
+			castTitle = isString(t.options.cast.title) ? t.options.cast.title : 'Chromecast'
+		;
+
+		// Only one sender per page
+		if (!player.isVideo) {
+			return;
+		}
+
+		player.chromecastLayer = document.createElement('div');
+		player.chromecastLayer.className = `${t.options.classPrefix}chromecast-layer ${t.options.classPrefix}layer`;
+		player.chromecastLayer.innerHTML = `<div class="${t.options.classPrefix}chromecast-info"></div>`;
+		player.chromecastLayer.style.display = 'none';
+
+		layers.insertBefore(player.chromecastLayer, layers.firstChild);
+
+		button.className = `${t.options.classPrefix}button ${t.options.classPrefix}chromecast-button`;
+		button.innerHTML = `<button type="button" is="google-cast-button" aria-controls="${t.id}" title="${castTitle}" aria-label="${castTitle}" tabindex="0"></button>`;
+
+		t.addControlElement(button, 'chromecast');
+		t.castButton = button;
+
+		// Activate poster layer
+		player.chromecastLayer.innerHTML = `<div class="${t.options.classPrefix}chromecast-container">` +
+			`<span class="${t.options.classPrefix}chromecast-icon"></span>` +
+			`<span class="${t.options.classPrefix}chromecast-info">${i18n.t('mejs.chromecast-legend')} <span class="device"></span></span>` +
+			`</div>`;
+
+		if (media.originalNode.getAttribute('poster')) {
+			player.chromecastLayer.innerHTML += `<img src="${media.originalNode.getAttribute('poster')}" width="100%" height="100%">`;
+		}
+	}
+
+	clearchromecast (player) {
+
+		player.castPlayerController.stop();
+
+		if (player.castButton) {
+			player.castButton.remove();
+		}
+
+		if (player.chromecastLayer) {
+			player.chromecastLayer.remove();
+		}
+	}
+
 	buildposter (player, controls, layers, media) {
 		const
 			t = this,
@@ -1633,10 +1873,10 @@ class MediaElementPlayer {
 					pressed = button.getAttribute('aria-pressed')
 				;
 
-				if (media.paused) {
-					media.play();
+				if (t.paused()) {
+					t.play();
 				} else {
-					media.pause();
+					t.pause();
 				}
 
 				button.setAttribute('aria-pressed', !!pressed);
@@ -1654,6 +1894,7 @@ class MediaElementPlayer {
 		});
 
 		layers.appendChild(bigPlay);
+		let hasError = false;
 
 		if (t.media.rendererName !== null && ((/(youtube|facebook)/i.test(t.media.rendererName) &&
 			!(player.media.originalNode.getAttribute('poster') || player.options.poster)) || IS_STOCK_ANDROID)) {
@@ -1692,7 +1933,7 @@ class MediaElementPlayer {
 		});
 		media.addEventListener('pause', () => {
 			loading.style.display = 'none';
-			if (!IS_STOCK_ANDROID) {
+			if (!IS_STOCK_ANDROID || !hasError) {
 				bigPlay.style.display = '';
 			}
 			if (buffer) {
@@ -1736,16 +1977,19 @@ class MediaElementPlayer {
 
 		// error handling
 		media.addEventListener('error', (e) => {
-			t._handleError(e);
+			t._handleError(e, t.media, t.node);
+			hasError = true;
 			loading.style.display = 'none';
 			bigPlay.style.display = 'none';
 			if (buffer) {
 				buffer.style.display = 'none';
 			}
-			if (e.message) {
-				error.style.display = 'block';
-				error.querySelector(`.${t.options.classPrefix}overlay-error`).innerHTML = e.message;
-			}
+
+			// error.style.display = 'block';
+			// error.querySelector(`.${t.options.classPrefix}overlay-error`).innerHTML =
+			// 	media.querySelector('.me_cannotplay').innerHTML;
+			//
+			// media.querySelector('.me_cannotplay').remove();
 		});
 
 		media.addEventListener('keydown', (e) => {
@@ -1800,69 +2044,63 @@ class MediaElementPlayer {
 	}
 
 	play () {
-		const t = this;
-
-		// only load if the current time is 0 to ensure proper playing
-		if (t.media.getCurrentTime() <= 0) {
-			t.load();
-		}
-		t.media.play();
+		this.proxy.play();
 	}
 
 	pause () {
-		try {
-			this.media.pause();
-		} catch (e) {
-			console.log(e);
-		}
+		this.proxy.pause();
+	}
+
+	paused () {
+		return this.proxy.paused();
+	}
+
+	muted () {
+		return this.proxy.muted();
+	}
+
+	ended () {
+		return this.proxy.ended();
+	}
+
+	readyState () {
+		return this.proxy.readyState();
 	}
 
 	load () {
-		const t = this;
-
-		if (!t.isLoaded) {
-			t.media.load();
-		}
-
-		t.isLoaded = true;
+		this.proxy.load();
 	}
 
 	setMuted (muted) {
-		this.media.setMuted(muted);
+		this.proxy.setMuted(muted);
 	}
 
 	setCurrentTime (time) {
-		this.media.setCurrentTime(time);
+		this.proxy.setCurrentTime(time);
 	}
 
 	getCurrentTime () {
-		return this.media.currentTime;
+		return this.proxy.getCurrentTime();
 	}
 
 	getDuration () {
-		return this.media.duration;
+		return this.proxy.getDuration();
 	}
 
 	setVolume (volume) {
-		this.media.setVolume(volume);
+		this.proxy.setVolume(volume);
 	}
 
 	getVolume () {
-		return this.media.volume;
+		return this.proxy.getVolume();
 	}
 
 	setSrc (src) {
-		const
-			t = this,
-			layer = document.getElementById(`${t.media.id}-iframe-overlay`)
-		;
+		this.proxy.setSrc(src);
+	}
 
-		if (layer) {
-			layer.remove();
-		}
-
-		t.media.setSrc(src);
-		t.createIframeLayer();
+	getSrc () {
+		return this.proxy.getSrc();
 	}
 
 	remove () {
@@ -1998,33 +2236,3 @@ class MediaElementPlayer {
 window.MediaElementPlayer = MediaElementPlayer;
 
 export default MediaElementPlayer;
-
-// turn into plugin
-(($) => {
-
-	if (typeof $ !== 'undefined') {
-		$.fn.mediaelementplayer = function (options) {
-			if (options === false) {
-				this.each(function () {
-					const player = $(this).data('mediaelementplayer');
-					if (player) {
-						player.remove();
-					}
-					$(this).removeData('mediaelementplayer');
-				});
-			}
-			else {
-				this.each(function () {
-					$(this).data('mediaelementplayer', new MediaElementPlayer(this, options));
-				});
-			}
-			return this;
-		};
-
-		$(document).ready(() => {
-			// auto enable using JSON attribute
-			$(`.${config.classPrefix}player`).mediaelementplayer();
-		});
-	}
-
-})(mejs.$);

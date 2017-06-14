@@ -415,7 +415,7 @@ Object.assign(MediaElementPlayer.prototype, {
 		// current time
 		media.addEventListener('timeupdate', (e) => {
 			const broadcast = controls.querySelector(`.${t.options.classPrefix}broadcast`);
-			if (t.getDuration() !== Infinity ) {
+			if (t.getDuration() !== Infinity) {
 				if (broadcast) {
 					t.slider.style.display = '';
 					broadcast.remove();

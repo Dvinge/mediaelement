@@ -29,6 +29,9 @@
 			"mejs.play": "Odtwarzaj",
 			"mejs.pause": "Wstrzymaj",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Suwak czasu",
 			"mejs.time-help-text": "Strzałki w lewo/w prawo powodują przewijanie o sekundę, strzałki w górę/w dół o dziesięć sekund.",

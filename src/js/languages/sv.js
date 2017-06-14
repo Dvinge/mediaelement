@@ -28,6 +28,9 @@
 			"mejs.play": "Spela",
 			"mejs.pause": "Pausa",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Tidslinje",
 			"mejs.time-help-text": "Använd Vänster/Höger piltangent för att spola en sekund, Upp/Ner piltangent spola tio sekunder.",

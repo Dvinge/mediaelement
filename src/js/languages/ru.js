@@ -29,6 +29,9 @@
 			"mejs.play": "Воспроизвести",
 			"mejs.pause": "Пауза",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Слайдер времени",
 			"mejs.time-help-text": "Используйте Левую/Правую клавиши со стрелками, чтобы продвинуться на одну секунду, клавиши со стрелками Вверх/Вниз, чтобы продвинуться на десять секунд.",

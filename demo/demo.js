@@ -103,6 +103,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		new MediaElementPlayer(mediaElements[i], {
 			stretching: stretching,
 			pluginPath: '../build/',
+			features: ['playpause', 'current', 'progress', 'duration', 'tracks', 'volume', 'fullscreen', 'chromecast'],
+			cast: {
+				title: 'Chromecast'
+			},
 			success: function (media) {
 				var renderer = document.getElementById(media.id + '-rendername');
 

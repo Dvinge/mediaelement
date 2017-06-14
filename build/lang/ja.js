@@ -17,7 +17,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "全画面",			
 			"mejs.play": "再生",
-			"mejs.pause": "一時停止",			
+			"mejs.pause": "一時停止",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "タイムスライダー",
 			"mejs.time-help-text": "1秒進めるには左/右矢印をキーを、10秒進めるには上/下矢印を使います。",
 			//"mejs.live-broadcast" : "Live Broadcast",			

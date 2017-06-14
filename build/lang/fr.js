@@ -18,7 +18,8 @@
 			"mejs.install-flash": "Vous utilisez un navigateur sur lequel Flash ne semble pas installé ou activé. Veuillez activer le plugin Flash ou télécharger la dernière version sur https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Plein écran",			
 			"mejs.play": "Lecture",
-			"mejs.pause": "Pause",			
+			"mejs.pause": "Pause",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Curseur temporel",
 			"mejs.time-help-text": "Utilisez les flèches Gauche/Droite du clavier pour avancer d'une seconde, les flèches Haut/Bas pour avancer de 10 secondes.",
 			"mejs.live-broadcast" : "Diffusion en direct",			

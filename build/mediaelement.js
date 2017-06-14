@@ -768,10 +768,14 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 	};
 
-	t.mediaElement.createErrorMessage = function (message, urlList) {
+	t.mediaElement.processError = function (message, urlList) {
 
 		message = message || '';
 		urlList = Array.isArray(urlList) ? urlList : [];
+
+		if (t.mediaElement.querySelector('.me_cannotplay')) {
+			t.mediaElement.querySelector('.me_cannotplay').remove();
+		}
 
 		var errorContainer = _document2.default.createElement('div');
 		errorContainer.className = 'me_cannotplay';
@@ -798,7 +802,9 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 
 		errorContainer.innerHTML = errorContent;
-		console.error(message);
+		var event = (0, _general.createEvent)('error', t.mediaElement);
+		event.message = message;
+		t.mediaElement.dispatchEvent(event);
 
 		t.mediaElement.originalNode.parentNode.insertBefore(errorContainer, t.mediaElement.originalNode);
 		t.mediaElement.originalNode.style.display = 'none';
@@ -889,10 +895,7 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 
 		if (renderInfo === null && mediaFiles[0].src) {
-			event = (0, _general.createEvent)('error', t.mediaElement);
-			event.message = 'No renderer found';
-			t.mediaElement.createErrorMessage(event.message, mediaFiles);
-			t.mediaElement.dispatchEvent(event);
+			t.mediaElement.processError('No renderer found', mediaFiles);
 			return;
 		}
 
@@ -909,28 +912,38 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 					if (t.mediaElement.promises.length) {
 						Promise.all(t.mediaElement.promises).then(function () {
 							setTimeout(function () {
-								t.mediaElement.renderer[methodName](args);
-							}, 250);
+								var response = t.mediaElement.renderer[methodName](args);
+								if (response && typeof response.then === 'function') {
+									response.catch(function (e) {
+										return t.mediaElement.processError(e, mediaFiles);
+									});
+								}
+							}, 300);
 						}).catch(function (e) {
-							if (t.mediaElement.renderer === undefined || t.mediaElement.renderer === null) {
-								var event = (0, _general.createEvent)('error', t.mediaElement);
-								event.message = e;
-								t.mediaElement.dispatchEvent(event);
-								t.mediaElement.createErrorMessage(e, mediaFiles);
-							}
+							t.mediaElement.processError(e, mediaFiles);
 						});
 					} else {
 						try {
-							t.mediaElement.renderer[methodName](args);
+							var response = t.mediaElement.renderer[methodName](args);
+							if (response && typeof response.then === 'function') {
+								response.catch(function (e) {
+									return t.mediaElement.processError(e, mediaFiles);
+								});
+							}
 						} catch (e) {
-							t.mediaElement.createErrorMessage();
+							t.mediaElement.processError(e, mediaFiles);
 						}
 					}
 				} else {
 					try {
-						t.mediaElement.renderer[methodName](args);
+						var _response = t.mediaElement.renderer[methodName](args);
+						if (_response && typeof _response.then === 'function') {
+							_response.catch(function (e) {
+								return t.mediaElement.processError(e, mediaFiles);
+							});
+						}
 					} catch (e) {
-						t.mediaElement.createErrorMessage();
+						t.mediaElement.processError(e, mediaFiles);
 					}
 				}
 			}
@@ -1184,6 +1197,8 @@ var EN = exports.EN = {
 
 	"mejs.play": "Play",
 	"mejs.pause": "Pause",
+
+	"mejs.chromecast-legend": "Casting to:",
 
 	"mejs.time-slider": "Time Slider",
 	"mejs.time-help-text": "Use Left/Right Arrow keys to advance one second, Up/Down arrows to advance ten seconds.",

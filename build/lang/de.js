@@ -17,7 +17,8 @@
 			"mejs.install-flash": "Ihr Browser unterstützt kein Flash. Bitte aktivieren Sie Flash bzw. laden Sie die aktuellste Flash-Version herunter unter https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Vollbild",			
 			"mejs.play": "Abspielen",
-			"mejs.pause": "Pause",			
+			"mejs.pause": "Pause",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Zeitschieberegler",
 			"mejs.time-help-text": "Verwende die Pfeiltaste nach links/rechts, um eine Sekunde zu spulen, hoch/runter um zehn Sekunden zu spulen.",
 			"mejs.live-broadcast" : "Live-Übertragung",			

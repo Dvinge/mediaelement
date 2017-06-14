@@ -4,6 +4,7 @@
 * [Configuration](#development)
 	* [Standalone](#standalone)
 	* [MediaElementPlayer](#player)
+	* [Chromecast](#chromecast)
 * [API](#api)
 	* [Properties](#properties)
 	* [Methods](#methods)
@@ -69,6 +70,7 @@ youtube | object | | See [Documentation](https://developers.google.com/youtube/p
 1. Vimeo and Soundcloud don't need any configuration for now since they are pretty straight forward.
 2. To use DRM with M(PEG)-DASH, make sure CORS are configured correctly, and also your site **MUST** be using SSL.
 3. `success` and `error` will be available for both `MediaElement` and `MediaElementPlayer`; however, when using `MediaElementPlayer`, a third argument is passed: `instance`, which gives access to the methods associated to the `MediaElementPlayer` class.
+4. When using `MediaElementPlayer`, `error` arguments will be: `error` (the details on the error event), `media` and `node`.
 
 <a id="player"></a>
 ### MediaElementPlayer
@@ -117,6 +119,7 @@ stretching | string | `auto` | Stretching modes for video player. If `auto` is s
 enableKeyboard | boolean | `true` | Turns keyboard support on and off for this instance
 pauseOtherPlayers | boolean | `true` | When focused player starts, it will pause other players
 secondsDecimalLength | number | `0` | Number of decimal places to show if frames are shown
+cast | object | | Configuration for Chromecast, see [Chromecast configuration](#chromecast) for more details
 keyActions | array | `[...]` | Keyboard actions to trigger different actions. Accepts array of objects in format: `{keys: [1,2,3...], action: function(player, media) { ... }}`. To see the entire list, please check `/src/js/mediaelementplayer-player.js`
 duration | number | `-1` | Start point to detect changes on media time duration
 timeAndDurationSeparator | string | `<span> | </span>` | Separator between the current time and the total duration of media being played
@@ -140,6 +143,34 @@ fullscreenText | string | `null` | Title for Fullscreen button for WARIA purpose
 playText | string | `null` | Title for Play/Pause button for WARIA purposes when media is playing
 pauseText | string | `null` | Title for Play/Pause button for WARIA purposes when media is paused
 
+<a id="chromecast"></a>
+### Chromecast
+
+If you want to enable `Chromecast` support using `MediaElementPlayer`, you need to add in the `features` configuration the keyword **chromecast**, and then configure the
+`cast` object configuration  with the following elements:
+
+Parameter | Type | Default | Description
+------ | --------- | ------- | --------
+title | string | `null` | Chromecast button title for ARIA purposes 
+appId | string | `null` |  Chromecast Application ID; if `null` is provided, it will default to `chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID`
+policy | string | `origin` | Chromecast default policy: `origin` (by default, auto connect from same appId and page origin), `tab` (auto connect from same appId, page origin, and tab) and `page` (no auto connect)
+enableTracks | boolean | `false` | Whether to load tracks or not through Chromecast. In order to process tracks correctly, `tracks` feature must be enable on the player configuration and CORS **MUST** be setup correctly. Read [this link](https://developers.google.com/cast/docs/player) for more information.
+
+Also, the following snippet shows the `data-cast-*` attributes needed to achieve Chromecast best experience, **even when they are not required**.
+
+```html
+<video id="player1" width="640" height="360" preload="none"
+       data-cast-title="[Your title]"
+       data-cast-description="[Your optional description]"
+       poster="//example.com/poster.jpg">
+    <source src="//example.com/media.mp4" type="video/mp4">
+</video>
+```
+
+The `poster` attribute is not required as well, but most of the media players use a static image when media is being broadcast in Chromecast, 
+so **it is recommended its use**.
+
+Also, a page can contain **ONLY ONE** sender.
 
 <a id="api"></a>
 ## API

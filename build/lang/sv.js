@@ -16,7 +16,8 @@
 			"mejs.install-flash": "Du använder en webbläsare som inte har Flash Player aktiverat eller installerad. Aktivera Flash Player eller hämta den senaste versionen från https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Fullskärm",			
 			"mejs.play": "Spela",
-			"mejs.pause": "Pausa",			
+			"mejs.pause": "Pausa",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Tidslinje",
 			"mejs.time-help-text": "Använd Vänster/Höger piltangent för att spola en sekund, Upp/Ner piltangent spola tio sekunder.",
 			"mejs.live-broadcast": "Livesändning",			

@@ -20,6 +20,8 @@
             "mejs.fullscreen": "تمام صفحه",
             "mejs.play": "پخش",
             "mejs.pause": "توقف",
+            // features/chromecast
+            // "mejs.chromecast-legend": "Casting to:",
             "mejs.time-slider": "تغییر زمان",
             "mejs.time-help-text": "از کلید های چپ و راست کیبورد برای جا به جایی به میزان یک ثانیه استفاده کنید.همچنین کلید های بالا و پایین 10 ثانیه زمان را جا به جا می کند.",
             "mejs.live-broadcast": "پخش زنده",

@@ -17,7 +17,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Celá obrazovka",			
 			"mejs.play": "Prehrať",
-			"mejs.pause": "Pozastaviť",			
+			"mejs.pause": "Pozastaviť",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Posúvač času",
 			"mejs.time-help-text": "Klávesmi so šípkou doľava/doprava posuniete o jednu sekundu, šípkami nahor/ nadol posuniete o desať sekúnd.",
 			//"mejs.live-broadcast" : "Live Broadcast",			

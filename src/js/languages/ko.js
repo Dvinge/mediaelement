@@ -29,6 +29,9 @@
 			"mejs.play": "작동",
 			"mejs.pause": "정지",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "시간 슬라이더",
 			"mejs.time-help-text": "1초 전진하려면 좌/우측 화살표를 사용하시고 10초 전진하려면 위/아래 화살표를 사용하세요.",

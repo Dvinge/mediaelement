@@ -17,7 +17,8 @@
 			"mejs.install-flash": "Twoja przeglądarka nie ma włączonej lub zainstalowanej wtyczki Flash Player. Prosimy ją włączyć lub pobrać najnowszą wersję ze strony https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Pełny ekran",			
 			"mejs.play": "Odtwarzaj",
-			"mejs.pause": "Wstrzymaj",			
+			"mejs.pause": "Wstrzymaj",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Suwak czasu",
 			"mejs.time-help-text": "Strzałki w lewo/w prawo powodują przewijanie o sekundę, strzałki w górę/w dół o dziesięć sekund.",
 			"mejs.live-broadcast": "Transmisja na żywo",			

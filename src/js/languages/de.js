@@ -29,6 +29,9 @@
 			"mejs.play": "Abspielen",
 			"mejs.pause": "Pause",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Zeitschieberegler",
 			"mejs.time-help-text": "Verwende die Pfeiltaste nach links/rechts, um eine Sekunde zu spulen, hoch/runter um zehn Sekunden zu spulen.",

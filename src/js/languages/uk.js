@@ -28,6 +28,9 @@
 			"mejs.play": "Пуск",
 			"mejs.pause": "Пауза",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Повзунок часу",
 			"mejs.time-help-text": "Використовуйте ліву/праву клавіші зі стрілками, щоб переміститися на одну секунду, або клавіші вверх/вниз, щоб переміститися на десять секунд.",

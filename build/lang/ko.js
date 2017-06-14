@@ -17,7 +17,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "전체화면",			
 			"mejs.play": "작동",
-			"mejs.pause": "정지",			
+			"mejs.pause": "정지",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "시간 슬라이더",
 			"mejs.time-help-text": "1초 전진하려면 좌/우측 화살표를 사용하시고 10초 전진하려면 위/아래 화살표를 사용하세요.",
 			//"mejs.live-broadcast" : "Live Broadcast",			

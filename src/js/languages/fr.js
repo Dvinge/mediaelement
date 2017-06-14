@@ -30,6 +30,9 @@
 			"mejs.play": "Lecture",
 			"mejs.pause": "Pause",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Curseur temporel",
 			"mejs.time-help-text": "Utilisez les flèches Gauche/Droite du clavier pour avancer d'une seconde, les flèches Haut/Bas pour avancer de 10 secondes.",

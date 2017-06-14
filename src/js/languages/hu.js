@@ -29,6 +29,9 @@
 			"mejs.play": "Lejátszás",
 			"mejs.pause": "Szünet",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Idő csúszka",
 			"mejs.time-help-text": "Használja a Bal/Jobb nyíl gombokat az egy másodperces léptetéshez, a Fel/Le nyíl gombokat a tíz másodperces léptetéshez.",

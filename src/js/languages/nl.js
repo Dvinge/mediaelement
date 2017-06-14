@@ -30,6 +30,9 @@
 			"mejs.play": "Afspelen",
 			"mejs.pause": "Pauzeren",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Tijd schuifbalk",
 			"mejs.time-help-text": "Gebruik pijl naar links/rechts om per seconde te springen, pijl omhoog/omlaag om per tien seconden te springen.",

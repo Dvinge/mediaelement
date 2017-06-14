@@ -17,7 +17,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "全屏",			
 			"mejs.play": "播放",
-			"mejs.pause": "暂停",			
+			"mejs.pause": "暂停",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "时间滑动棒",
 			"mejs.time-help-text": "使用作/右箭头快进1秒，使用上/下箭头快进10秒。",
 			//"mejs.live-broadcast" : "Live Broadcast",			

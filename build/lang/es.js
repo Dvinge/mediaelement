@@ -17,7 +17,8 @@
 			"mejs.install-flash": "Esta usando un navegador que no tiene activado o instalado el reproductor de Flash. Por favor active el plugin del reproductor de Flash o descargue la versión más reciente en https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Pantalla completa",			
 			"mejs.play": "Reproducción",
-			"mejs.pause": "Pausa",			
+			"mejs.pause": "Pausa",			// features/chromecast
+			"mejs.chromecast-legend": "Emitiendo a:",			
 			"mejs.time-slider": "Control deslizante de tiempo",
 			"mejs.time-help-text": "Use las flechas Izquierda/Derecha para avanzar un segundo y las flechas Arriba/Abajo para avanzar diez segundos.",
 			"mejs.live-broadcast": "Transmisión en Vivo",			

@@ -29,6 +29,9 @@
 			//"mejs.play": "Play",
 			//"mejs.pause": "Pause",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			//"mejs.time-slider": "Time Slider",
 			//"mejs.time-help-text": "Use Left/Right Arrow keys to advance one second, Up/Down arrows to advance ten seconds.",

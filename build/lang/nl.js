@@ -18,7 +18,8 @@
 			// "mejs.install-flash": "You are using a browser that does not have Flash player enabled or installed. Please turn on your Flash player plugin or download the latest version from https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Volledig scherm",			
 			"mejs.play": "Afspelen",
-			"mejs.pause": "Pauzeren",			
+			"mejs.pause": "Pauzeren",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Tijd schuifbalk",
 			"mejs.time-help-text": "Gebruik pijl naar links/rechts om per seconde te springen, pijl omhoog/omlaag om per tien seconden te springen.",
 			//"mejs.live-broadcast" : "Live Broadcast",			

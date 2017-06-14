@@ -29,6 +29,9 @@
 			"mejs.play": "再生",
 			"mejs.pause": "一時停止",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "タイムスライダー",
 			"mejs.time-help-text": "1秒進めるには左/右矢印をキーを、10秒進めるには上/下矢印を使います。",

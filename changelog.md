@@ -1,6 +1,6 @@
 ### Version History
 
-*4.1.4 (2017/??/??)*
+*4.2.0 (2017/??/??)*
 
 * Fixed issues related to Promises with native renderers @rafa8626
 * Fixed typos in player to execute properly `destroy()` and `stop()` methods @rafa8626
@@ -11,6 +11,8 @@
 * Added missing documentation about how to install `MediaElement` in Drupal @rafa8626
 * Fixed typo in `Vimeo` renderer @rafa8626
 * Updated version of `Facebook` API @rafa8626
+* Integrated `Chromecast` in core to achieve Chromecast's dual-nature properly @rafa8626
+* Improved error system to catch more errors and present them to user @rafa8626 
 
 *4.1.3 (2017/06/06)*
 

@@ -14,7 +14,8 @@
 			"mejs.install-flash": "Koristite preglednik koji nema omogućen ili instaliran Flash preglednik. Molimo Vas uključite Flash dodatak ili preuzmite najnoviju verziju s https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Puni zaslon",			
 			"mejs.play": "Pokreni",
-			"mejs.pause": "Zaustavi",			
+			"mejs.pause": "Zaustavi",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Vremenska traka",
 			"mejs.time-help-text": "Koristi strelice lijevo/desno za pomak naprijed za 1 sekundu te gore/dolje za pomak od 10 sekundi.",
 			//"mejs.live-broadcast" : "Live Broadcast",			

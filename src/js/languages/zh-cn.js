@@ -29,6 +29,9 @@
 			"mejs.play": "播放",
 			"mejs.pause": "暂停",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "时间滑动棒",
 			"mejs.time-help-text": "使用作/右箭头快进1秒，使用上/下箭头快进10秒。",

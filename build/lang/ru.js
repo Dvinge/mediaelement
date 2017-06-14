@@ -17,7 +17,8 @@
 			"mejs.install-flash": "Flash player в вашем браузере не установлен или отключен. Пожалуйста включите ваш Flash player или скачайте последнюю версию с https://get.adobe.com/flashplayer/",			
 			"mejs.fullscreen": "Полноэкранный режим",			
 			"mejs.play": "Воспроизвести",
-			"mejs.pause": "Пауза",			
+			"mejs.pause": "Пауза",			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",			
 			"mejs.time-slider": "Слайдер времени",
 			"mejs.time-help-text": "Используйте Левую/Правую клавиши со стрелками, чтобы продвинуться на одну секунду, клавиши со стрелками Вверх/Вниз, чтобы продвинуться на десять секунд.",
 			"mejs.live-broadcast" : "Прямая трансляция",			

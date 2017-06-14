@@ -276,10 +276,15 @@ class MediaElement {
 		 *
 		 * @param {Object[]} urlList
 		 */
-		t.mediaElement.createErrorMessage = (message, urlList) => {
+		t.mediaElement.processError = (message, urlList) => {
 
 			message = message || '';
 			urlList = Array.isArray(urlList) ? urlList : [];
+
+			// Remove prior error message
+			if (t.mediaElement.querySelector('.me_cannotplay')) {
+				t.mediaElement.querySelector('.me_cannotplay').remove();
+			}
 
 			const errorContainer = document.createElement('div');
 			errorContainer.className = 'me_cannotplay';
@@ -306,7 +311,9 @@ class MediaElement {
 			}
 
 			errorContainer.innerHTML = errorContent;
-			console.error(message);
+			const event = createEvent('error', t.mediaElement);
+			event.message = message;
+			t.mediaElement.dispatchEvent(event);
 
 			t.mediaElement.originalNode.parentNode.insertBefore(errorContainer, t.mediaElement.originalNode);
 			t.mediaElement.originalNode.style.display = 'none';
@@ -416,10 +423,7 @@ class MediaElement {
 				// At least there must be a media in the `mediaFiles` since the media tag can come up an
 				// empty source for starters
 				if (renderInfo === null && mediaFiles[0].src) {
-					event = createEvent('error', t.mediaElement);
-					event.message = 'No renderer found';
-					t.mediaElement.createErrorMessage(event.message, mediaFiles);
-					t.mediaElement.dispatchEvent(event);
+					t.mediaElement.processError('No renderer found', mediaFiles);
 					return;
 				}
 
@@ -433,33 +437,34 @@ class MediaElement {
 						typeof t.mediaElement.renderer[methodName] === 'function') {
 						if (methodName === 'play') {
 							if (t.mediaElement.promises.length) {
-								Promise.all(t.mediaElement.promises)
-								.then(() => {
-									// Give a delay to ensure all be played properly
+								Promise.all(t.mediaElement.promises).then(() => {
 									setTimeout(() => {
-										t.mediaElement.renderer[methodName](args)
-									}, 250);
-								})
-								.catch((e) => {
-									if (t.mediaElement.renderer === undefined || t.mediaElement.renderer === null) {
-										const event = createEvent('error', t.mediaElement);
-										event.message = e;
-										t.mediaElement.dispatchEvent(event);
-										t.mediaElement.createErrorMessage(e, mediaFiles);
-									}
+										const response = t.mediaElement.renderer[methodName](args);
+										if (response && typeof response.then === 'function') {
+											response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+										}
+									}, 300);
+								}).catch((e) => {
+									t.mediaElement.processError(e, mediaFiles);
 								});
 							} else {
 								try {
-									t.mediaElement.renderer[methodName](args);
+									const response = t.mediaElement.renderer[methodName](args);
+									if (response && typeof response.then === 'function') {
+										response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+									}
 								} catch (e) {
-									t.mediaElement.createErrorMessage();
+									t.mediaElement.processError(e, mediaFiles);
 								}
 							}
 						} else {
 							try {
-								t.mediaElement.renderer[methodName](args);
+								const response = t.mediaElement.renderer[methodName](args);
+								if (response && typeof response.then === 'function') {
+									response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+								}
 							} catch (e) {
-								t.mediaElement.createErrorMessage();
+								t.mediaElement.processError(e, mediaFiles);
 							}
 						}
 					}

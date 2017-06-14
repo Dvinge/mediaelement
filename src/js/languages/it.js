@@ -29,6 +29,9 @@
 			"mejs.play": "Eseguire",
 			"mejs.pause": "Pausa",
 
+			// features/chromecast
+			// "mejs.chromecast-legend": "Casting to:",
+
 			// features/progress.js
 			"mejs.time-slider": "Barra di scorrimento",
 			"mejs.time-help-text": "Utilizzare i tasti Freccia sinistra/Freccia destra per avanzare di un secondo, Freccia Su/Giù per avanzare dieci secondi.",

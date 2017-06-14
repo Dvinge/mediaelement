@@ -29,6 +29,9 @@
 			"mejs.play": "Reproducción",
 			"mejs.pause": "Pausa",
 
+			// features/chromecast
+			"mejs.chromecast-legend": "Emitiendo a:",
+
 			// features/progress.js
 			"mejs.time-slider": "Control deslizante de tiempo",
 			"mejs.time-help-text": "Use las flechas Izquierda/Derecha para avanzar un segundo y las flechas Arriba/Abajo para avanzar diez segundos.",

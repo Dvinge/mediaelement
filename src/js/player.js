@@ -584,6 +584,8 @@ class MediaElementPlayer {
 			t.container.dispatchEvent(event);
 		}
 
+		this.showCast = false;
+
 		if (t.isVideo && t.options.features.indexOf('chromecast') > -1) {
 			window.__onGCastApiAvailable = (isAvailable) => {
 				const
@@ -621,28 +623,29 @@ class MediaElementPlayer {
 				break;
 		}
 
-		cast.framework.CastContext.getInstance().setOptions({
+		const context = cast.framework.CastContext.getInstance();
+		context.setOptions({
 			receiverApplicationId: this.options.cast.appID || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
 			autoJoinPolicy: chrome.cast.AutoJoinPolicy[origin]
 		});
+		context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 
 		this.remotePlayer = new cast.framework.RemotePlayer();
 		this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
 		this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
 			this._switchPlayer.bind(this));
-
-		const context = cast.framework.CastContext.getInstance();
-		context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 	}
 
 	/**
 	 *
-	 * @param event
+	 * @param e
 	 * @private
 	 */
-	_checkCastButtonStatus (event) {
-		if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+	_checkCastButtonStatus (e) {
+		this.showCast = true;
+		if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
 			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
+			this.showCast = false;
 		} else {
 			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
 		}
@@ -675,6 +678,9 @@ class MediaElementPlayer {
 		this.proxy = new DefaultPlayer(this.media, this.isVideo, this.options.classPrefix);
 		if (this.chromecastLayer) {
 			this.chromecastLayer.style.display = 'none';
+		}
+		if (this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button') && !this.showCast) {
+			this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
 		}
 		this.setCurrentTime(this.currentMediaTime);
 		if (this.getCurrentTime() > 0 && !IS_IOS && !IS_ANDROID) {

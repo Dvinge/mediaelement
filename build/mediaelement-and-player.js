@@ -3792,6 +3792,8 @@ var MediaElementPlayer = function () {
 			t.container.dispatchEvent(event);
 		}
 
+		this.showCast = false;
+
 		if (t.isVideo && t.options.features.indexOf('chromecast') > -1) {
 			_window2.default.__onGCastApiAvailable = function (isAvailable) {
 				var mediaType = (0, _media.getTypeFromFile)(t.media.getSrc()).toLowerCase(),
@@ -3825,25 +3827,26 @@ var MediaElementPlayer = function () {
 					break;
 			}
 
-			cast.framework.CastContext.getInstance().setOptions({
+			var context = cast.framework.CastContext.getInstance();
+			context.setOptions({
 				receiverApplicationId: this.options.cast.appID || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
 				autoJoinPolicy: chrome.cast.AutoJoinPolicy[origin]
 			});
+			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 
 			this.remotePlayer = new cast.framework.RemotePlayer();
 			this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
 			this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED, this._switchPlayer.bind(this));
-
-			var context = cast.framework.CastContext.getInstance();
-			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 		}
 	}, {
 		key: '_checkCastButtonStatus',
-		value: function _checkCastButtonStatus(event) {
+		value: function _checkCastButtonStatus(e) {
 			var _this = this;
 
-			if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+			this.showCast = true;
+			if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
 				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
+				this.showCast = false;
 			} else {
 				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = '';
 			}
@@ -3874,6 +3877,9 @@ var MediaElementPlayer = function () {
 			this.proxy = new _default2.default(this.media, this.isVideo, this.options.classPrefix);
 			if (this.chromecastLayer) {
 				this.chromecastLayer.style.display = 'none';
+			}
+			if (this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button') && !this.showCast) {
+				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
 			}
 			this.setCurrentTime(this.currentMediaTime);
 			if (this.getCurrentTime() > 0 && !_constants.IS_IOS && !_constants.IS_ANDROID) {
@@ -5323,7 +5329,7 @@ var ChromecastPlayer = function () {
 		this.player = player;
 		this.controller = controller;
 		this.media = media;
-		this.ended = false;
+		this.endedMedia = false;
 		this.enableTracks = enableTracks;
 
 		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_PAUSED_CHANGED, function () {
@@ -5333,7 +5339,7 @@ var ChromecastPlayer = function () {
 				_this.play();
 			}
 
-			_this.ended = false;
+			_this.endedMedia = false;
 		});
 		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_MUTED_CHANGED, function () {
 			_this.setMuted(_this.player.isMuted);
@@ -5363,7 +5369,7 @@ var ChromecastPlayer = function () {
 			}, 50);
 
 			if (_this.getCurrentTime() >= _this.getDuration()) {
-				_this.ended = true;
+				_this.endedMedia = true;
 				setTimeout(function () {
 					var event = mejs.Utils.createEvent('ended', _this.media);
 					_this.media.dispatchEvent(event);
@@ -5408,7 +5414,7 @@ var ChromecastPlayer = function () {
 	}, {
 		key: 'ended',
 		value: function ended() {
-			return this.ended;
+			return this.endedMedia;
 		}
 	}, {
 		key: 'readyState',

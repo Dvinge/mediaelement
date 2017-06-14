@@ -6,7 +6,7 @@ export default class ChromecastPlayer {
 		this.player = player;
 		this.controller = controller;
 		this.media = media;
-		this.ended = false;
+		this.endedMedia = false;
 		this.enableTracks = enableTracks;
 
 		// Add event listeners for player changes which may occur outside sender app
@@ -17,7 +17,7 @@ export default class ChromecastPlayer {
 				this.play();
 			}
 
-			this.ended = false;
+			this.endedMedia = false;
 		});
 		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_MUTED_CHANGED, () => {
 			this.setMuted(this.player.isMuted);
@@ -47,7 +47,7 @@ export default class ChromecastPlayer {
 			}, 50);
 
 			if (this.getCurrentTime() >= this.getDuration()) {
-				this.ended = true;
+				this.endedMedia = true;
 				setTimeout(() => {
 					const event = mejs.Utils.createEvent('ended', this.media);
 					this.media.dispatchEvent(event);
@@ -86,7 +86,7 @@ export default class ChromecastPlayer {
 	}
 
 	ended () {
-		return this.ended;
+		return this.endedMedia;
 	}
 
 	readyState () {

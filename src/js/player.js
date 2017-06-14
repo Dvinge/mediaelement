@@ -1872,6 +1872,7 @@ class MediaElementPlayer {
 				}
 
 				button.setAttribute('aria-pressed', !!pressed);
+				t.container.focus();
 			}
 		});
 		// Allow keyboard to execute action on play button

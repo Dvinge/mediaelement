@@ -13,6 +13,7 @@
 * Updated version of `Facebook` API @rafa8626
 * Integrated `Chromecast` in core to achieve Chromecast's dual-nature properly @rafa8626
 * Improved error system to catch more errors and present them to user @rafa8626 
+* Replacing `buffer` querySelector with getter function in player (https://github.com/mediaelement/mediaelement/pull/2284) @ychen022
 
 *4.1.3 (2017/06/06)*
 

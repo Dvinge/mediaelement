@@ -8,6 +8,16 @@
  * Copyright 2010-2017, John Dyer (http://j.hn/)
  * License: MIT
  *
+ *//*!
+ * MediaElement.js
+ * http://www.mediaelementjs.com/
+ *
+ * Wrapper that mimics native HTML5 MediaElement (audio and video)
+ * using a variety of technologies (pure JavaScript, Flash, iframe)
+ *
+ * Copyright 2010-2017, John Dyer (http://j.hn/)
+ * License: MIT
+ *
  */(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 
 },{}],2:[function(_dereq_,module,exports){
@@ -298,7 +308,7 @@ var _mejs2 = _interopRequireDefault(_mejs);
 
 var _en = _dereq_(15);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -550,7 +560,7 @@ if (typeof mejsL10n !== 'undefined') {
 
 exports.default = i18n;
 
-},{"15":15,"28":28,"7":7}],6:[function(_dereq_,module,exports){
+},{"15":15,"22":22,"7":7}],6:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -571,13 +581,13 @@ var _mejs = _dereq_(7);
 
 var _mejs2 = _interopRequireDefault(_mejs);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _media2 = _dereq_(29);
+var _media2 = _dereq_(23);
 
 var _renderer = _dereq_(8);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -768,14 +778,10 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 	};
 
-	t.mediaElement.processError = function (message, urlList) {
+	t.mediaElement.createErrorMessage = function (message, urlList) {
 
 		message = message || '';
 		urlList = Array.isArray(urlList) ? urlList : [];
-
-		if (t.mediaElement.querySelector('.me_cannotplay')) {
-			t.mediaElement.querySelector('.me_cannotplay').remove();
-		}
 
 		var errorContainer = _document2.default.createElement('div');
 		errorContainer.className = 'me_cannotplay';
@@ -802,9 +808,7 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 
 		errorContainer.innerHTML = errorContent;
-		var event = (0, _general.createEvent)('error', t.mediaElement);
-		event.message = message;
-		t.mediaElement.dispatchEvent(event);
+		console.error(message);
 
 		t.mediaElement.originalNode.parentNode.insertBefore(errorContainer, t.mediaElement.originalNode);
 		t.mediaElement.originalNode.style.display = 'none';
@@ -895,7 +899,10 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 
 		if (renderInfo === null && mediaFiles[0].src) {
-			t.mediaElement.processError('No renderer found', mediaFiles);
+			event = (0, _general.createEvent)('error', t.mediaElement);
+			event.message = 'No renderer found';
+			t.mediaElement.createErrorMessage(event.message, mediaFiles);
+			t.mediaElement.dispatchEvent(event);
 			return;
 		}
 
@@ -912,38 +919,28 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 					if (t.mediaElement.promises.length) {
 						Promise.all(t.mediaElement.promises).then(function () {
 							setTimeout(function () {
-								var response = t.mediaElement.renderer[methodName](args);
-								if (response && typeof response.then === 'function') {
-									response.catch(function (e) {
-										return t.mediaElement.processError(e, mediaFiles);
-									});
-								}
-							}, 300);
+								t.mediaElement.renderer[methodName](args);
+							}, 250);
 						}).catch(function (e) {
-							t.mediaElement.processError(e, mediaFiles);
+							if (t.mediaElement.renderer === undefined || t.mediaElement.renderer === null) {
+								var event = (0, _general.createEvent)('error', t.mediaElement);
+								event.message = e;
+								t.mediaElement.dispatchEvent(event);
+								t.mediaElement.createErrorMessage(e, mediaFiles);
+							}
 						});
 					} else {
 						try {
-							var response = t.mediaElement.renderer[methodName](args);
-							if (response && typeof response.then === 'function') {
-								response.catch(function (e) {
-									return t.mediaElement.processError(e, mediaFiles);
-								});
-							}
+							t.mediaElement.renderer[methodName](args);
 						} catch (e) {
-							t.mediaElement.processError(e, mediaFiles);
+							t.mediaElement.createErrorMessage();
 						}
 					}
 				} else {
 					try {
-						var _response = t.mediaElement.renderer[methodName](args);
-						if (_response && typeof _response.then === 'function') {
-							_response.catch(function (e) {
-								return t.mediaElement.processError(e, mediaFiles);
-							});
-						}
+						t.mediaElement.renderer[methodName](args);
 					} catch (e) {
-						t.mediaElement.processError(e, mediaFiles);
+						t.mediaElement.createErrorMessage();
 					}
 				}
 			}
@@ -1034,7 +1031,7 @@ _window2.default.MediaElement = MediaElement;
 
 exports.default = MediaElement;
 
-},{"2":2,"26":26,"28":28,"29":29,"3":3,"7":7,"8":8}],7:[function(_dereq_,module,exports){
+},{"2":2,"20":20,"22":22,"23":23,"3":3,"7":7,"8":8}],7:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1199,15 +1196,15 @@ var _player = _dereq_(17);
 
 var _player2 = _interopRequireDefault(_player);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
 var Features = _interopRequireWildcard(_constants);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
-var _media = _dereq_(29);
+var _media = _dereq_(23);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1458,7 +1455,7 @@ Object.assign(_player2.default.prototype, {
 	}
 });
 
-},{"17":17,"2":2,"26":26,"27":27,"28":28,"29":29,"3":3,"5":5}],10:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"20":20,"21":21,"22":22,"23":23,"3":3,"5":5}],10:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -1473,9 +1470,9 @@ var _i18n = _dereq_(5);
 
 var _i18n2 = _interopRequireDefault(_i18n);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1496,10 +1493,10 @@ Object.assign(_player2.default.prototype, {
 		play.className = t.options.classPrefix + 'button ' + t.options.classPrefix + 'playpause-button ' + t.options.classPrefix + 'play';
 		play.innerHTML = '<button type="button" aria-controls="' + t.id + '" title="' + playTitle + '" aria-label="' + pauseTitle + '" tabindex="0"></button>';
 		play.addEventListener('click', function () {
-			if (t.paused()) {
-				t.play();
+			if (media.paused) {
+				media.play();
 			} else {
-				t.pause();
+				media.pause();
 			}
 		});
 
@@ -1551,7 +1548,7 @@ Object.assign(_player2.default.prototype, {
 	}
 });
 
-},{"17":17,"2":2,"27":27,"28":28,"5":5}],11:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"21":21,"22":22,"5":5}],11:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -1566,11 +1563,11 @@ var _i18n = _dereq_(5);
 
 var _i18n2 = _interopRequireDefault(_i18n);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
-var _time = _dereq_(31);
+var _time = _dereq_(25);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2000,7 +1997,7 @@ Object.assign(_player2.default.prototype, {
 	}
 });
 
-},{"17":17,"2":2,"26":26,"27":27,"31":31,"5":5}],12:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"20":20,"21":21,"25":25,"5":5}],12:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -2011,9 +2008,9 @@ var _player = _dereq_(17);
 
 var _player2 = _interopRequireDefault(_player);
 
-var _time = _dereq_(31);
+var _time = _dereq_(25);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2113,7 +2110,7 @@ Object.assign(_player2.default.prototype, {
 	}
 });
 
-},{"17":17,"2":2,"27":27,"31":31}],13:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"21":21,"25":25}],13:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -2132,11 +2129,11 @@ var _player = _dereq_(17);
 
 var _player2 = _interopRequireDefault(_player);
 
-var _time = _dereq_(31);
+var _time = _dereq_(25);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2853,7 +2850,7 @@ _mejs2.default.TrackFormatParser = {
 	}
 };
 
-},{"17":17,"2":2,"27":27,"28":28,"31":31,"5":5,"7":7}],14:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"21":21,"22":22,"25":25,"5":5,"7":7}],14:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -2868,11 +2865,11 @@ var _i18n = _dereq_(5);
 
 var _i18n2 = _interopRequireDefault(_i18n);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -3002,14 +2999,14 @@ Object.assign(_player2.default.prototype, {
 
 			positionVolumeHandle(volume);
 
-			t.setMuted(volume === 0);
-			t.setVolume(volume);
+			media.setMuted(volume === 0);
+			media.setVolume(volume);
 
 			e.preventDefault();
 			e.stopPropagation();
 		},
 		    toggleMute = function toggleMute() {
-			if (t.muted()) {
+			if (media.muted) {
 				positionVolumeHandle(0);
 				(0, _dom.removeClass)(mute, t.options.classPrefix + 'mute');
 				(0, _dom.addClass)(mute, t.options.classPrefix + 'unmute');
@@ -3163,7 +3160,7 @@ Object.assign(_player2.default.prototype, {
 	}
 });
 
-},{"17":17,"2":2,"26":26,"27":27,"28":28,"5":5}],15:[function(_dereq_,module,exports){
+},{"17":17,"2":2,"20":20,"21":21,"22":22,"5":5}],15:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3180,8 +3177,6 @@ var EN = exports.EN = {
 
 	"mejs.play": "Play",
 	"mejs.pause": "Pause",
-
-	"mejs.chromecast-legend": "Casting to:",
 
 	"mejs.time-slider": "Time Slider",
 	"mejs.time-help-text": "Use Left/Right Arrow keys to advance one second, Up/Down arrows to advance ten seconds.",
@@ -3276,31 +3271,6 @@ if (typeof jQuery !== 'undefined') {
 	_mejs2.default.$ = _window2.default.ender = _window2.default.$ = ender;
 }
 
-(function ($) {
-	if (typeof $ !== 'undefined') {
-		$.fn.mediaelementplayer = function (options) {
-			if (options === false) {
-				this.each(function () {
-					var player = $(this).data('mediaelementplayer');
-					if (player) {
-						player.remove();
-					}
-					$(this).removeData('mediaelementplayer');
-				});
-			} else {
-				this.each(function () {
-					$(this).data('mediaelementplayer', new MediaElementPlayer(this, options));
-				});
-			}
-			return this;
-		};
-
-		$(document).ready(function () {
-			$('.' + _mejs2.default.MepDefaults.classPrefix + 'player').mediaelementplayer();
-		});
-	}
-})(_mejs2.default.$);
-
 },{"3":3,"7":7}],17:[function(_dereq_,module,exports){
 'use strict';
 
@@ -3329,27 +3299,19 @@ var _mediaelement = _dereq_(6);
 
 var _mediaelement2 = _interopRequireDefault(_mediaelement);
 
-var _default = _dereq_(19);
-
-var _default2 = _interopRequireDefault(_default);
-
-var _chromecast = _dereq_(18);
-
-var _chromecast2 = _interopRequireDefault(_chromecast);
-
 var _i18n = _dereq_(5);
 
 var _i18n2 = _interopRequireDefault(_i18n);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _time = _dereq_(31);
+var _time = _dereq_(25);
 
-var _media = _dereq_(29);
+var _media = _dereq_(23);
 
-var _dom = _dereq_(27);
+var _dom = _dereq_(21);
 
 var dom = _interopRequireWildcard(_dom);
 
@@ -3444,30 +3406,21 @@ var config = exports.config = {
 
 	secondsDecimalLength: 0,
 
-	cast: {
-		title: null,
-
-		appID: null,
-
-		policy: 'origin',
-
-		enableTracks: false
-	},
-
 	keyActions: [{
 		keys: [32, 179],
-		action: function action(player) {
+		action: function action(player, media) {
+
 			if (!_constants.IS_FIREFOX) {
-				if (player.paused() || player.ended()) {
-					player.play();
+				if (media.paused || media.ended) {
+					media.play();
 				} else {
-					player.pause();
+					media.pause();
 				}
 			}
 		}
 	}, {
 		keys: [38],
-		action: function action(player) {
+		action: function action(player, media) {
 
 			if (player.container.querySelector('.' + config.classPrefix + 'volume-button>button').matches(':focus') || player.container.querySelector('.' + config.classPrefix + 'volume-slider').matches(':focus')) {
 				player.container.querySelector('.' + config.classPrefix + 'volume-slider').style.display = '';
@@ -3477,15 +3430,15 @@ var config = exports.config = {
 				player.startControlsTimer();
 			}
 
-			var newVolume = Math.min(player.getVolume() + 0.1, 1);
-			player.setVolume(newVolume);
+			var newVolume = Math.min(media.volume + 0.1, 1);
+			media.setVolume(newVolume);
 			if (newVolume > 0) {
-				player.setMuted(false);
+				media.setMuted(false);
 			}
 		}
 	}, {
 		keys: [40],
-		action: function action(player) {
+		action: function action(player, media) {
 
 			if (player.container.querySelector('.' + config.classPrefix + 'volume-button>button').matches(':focus') || player.container.querySelector('.' + config.classPrefix + 'volume-slider').matches(':focus')) {
 				player.container.querySelector('.' + config.classPrefix + 'volume-slider').style.display = '';
@@ -3496,37 +3449,38 @@ var config = exports.config = {
 				player.startControlsTimer();
 			}
 
-			var newVolume = Math.max(player.getVolume() - 0.1, 0);
-			player.setVolume(newVolume);
+			var newVolume = Math.max(media.volume - 0.1, 0);
+			media.setVolume(newVolume);
 
 			if (newVolume <= 0.1) {
-				player.setMuted(true);
+				media.setMuted(true);
 			}
 		}
 	}, {
 		keys: [37, 227],
-		action: function action(player) {
-			if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
+		action: function action(player, media) {
+			if (!isNaN(media.duration) && media.duration > 0) {
 				if (player.isVideo) {
 					player.showControls();
 					player.startControlsTimer();
 				}
 
-				var newTime = Math.max(player.getCurrentTime() - player.options.defaultSeekBackwardInterval(player), 0);
-				player.setCurrentTime(newTime);
+				var newTime = Math.max(media.currentTime - player.options.defaultSeekBackwardInterval(media), 0);
+				media.setCurrentTime(newTime);
 			}
 		}
 	}, {
 		keys: [39, 228],
-		action: function action(player) {
-			if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
+		action: function action(player, media) {
+
+			if (!isNaN(media.duration) && media.duration > 0) {
 				if (player.isVideo) {
 					player.showControls();
 					player.startControlsTimer();
 				}
 
-				var newTime = Math.min(player.getCurrentTime() + player.options.defaultSeekForwardInterval(player), player.getDuration());
-				player.setCurrentTime(newTime);
+				var newTime = Math.min(media.currentTime + player.options.defaultSeekForwardInterval(media), media.duration);
+				media.setCurrentTime(newTime);
 			}
 		}
 	}, {
@@ -3545,6 +3499,7 @@ var config = exports.config = {
 	}, {
 		keys: [77],
 		action: function action(player) {
+
 			player.container.querySelector('.' + config.classPrefix + 'volume-slider').style.display = '';
 			if (player.isVideo) {
 				player.showControls();
@@ -3568,6 +3523,14 @@ var MediaElementPlayer = function () {
 		var t = this,
 		    element = typeof node === 'string' ? _document2.default.getElementById(node) : node;
 
+		t.hasFocus = false;
+
+		t.controlsAreVisible = true;
+
+		t.controlsEnabled = true;
+
+		t.controlsTimer = null;
+
 		if (!(t instanceof MediaElementPlayer)) {
 			return new MediaElementPlayer(element, o);
 		}
@@ -3581,16 +3544,6 @@ var MediaElementPlayer = function () {
 		if (t.media.player !== undefined) {
 			return t.media.player;
 		}
-
-		t.hasFocus = false;
-
-		t.controlsAreVisible = true;
-
-		t.controlsEnabled = true;
-
-		t.controlsTimer = null;
-
-		t.currentMediaTime = 0;
 
 		if (o === undefined) {
 			var options = t.node.getAttribute('data-mejsoptions');
@@ -3783,8 +3736,6 @@ var MediaElementPlayer = function () {
 				t.node.style.display = 'none';
 			}
 
-		_mejs2.default.MepDefaults = meOptions;
-
 		new _mediaelement2.default(t.media, meOptions, t.mediaFiles);
 
 		if (t.container !== undefined && t.options.features.length && t.controlsAreVisible && !t.options.hideVideoControlsOnLoad) {
@@ -3792,137 +3743,10 @@ var MediaElementPlayer = function () {
 			t.container.dispatchEvent(event);
 		}
 
-		if (t.isVideo && t.options.features.indexOf('chromecast') > -1) {
-			_window2.default.__onGCastApiAvailable = function (isAvailable) {
-				var mediaType = (0, _media.getTypeFromFile)(t.media.getSrc()).toLowerCase(),
-				    canPlay = mediaType && ['application/x-mpegurl', 'vnd.apple.mpegurl', 'application/dash+xml', 'video/mp4'].indexOf(mediaType) > -1;
-
-				if (isAvailable && canPlay) {
-					t._initializeCastPlayer();
-				}
-			};
-
-			dom.loadScript('https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1');
-		}
-
 		return t;
 	}
 
 	_createClass(MediaElementPlayer, [{
-		key: '_initializeCastPlayer',
-		value: function _initializeCastPlayer() {
-			var origin = void 0;
-
-			switch (this.options.cast.policy) {
-				case 'tab':
-					origin = 'TAB_AND_ORIGIN_SCOPED';
-					break;
-				case 'page':
-					origin = 'PAGE_SCOPED';
-					break;
-				default:
-					origin = 'ORIGIN_SCOPED';
-					break;
-			}
-
-			cast.framework.CastContext.getInstance().setOptions({
-				receiverApplicationId: this.options.cast.appID || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-				autoJoinPolicy: chrome.cast.AutoJoinPolicy[origin]
-			});
-
-			this.remotePlayer = new cast.framework.RemotePlayer();
-			this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
-			this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED, this._switchPlayer.bind(this));
-
-			var context = cast.framework.CastContext.getInstance();
-			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
-		}
-	}, {
-		key: '_checkCastButtonStatus',
-		value: function _checkCastButtonStatus(event) {
-			var _this = this;
-
-			if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
-			} else {
-				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = '';
-			}
-
-			setTimeout(function () {
-				_this.setPlayerSize(_this.width, _this.height);
-				_this.setControlsSize();
-			}, 0);
-		}
-	}, {
-		key: '_switchPlayer',
-		value: function _switchPlayer() {
-			this.proxy.pause();
-			if (cast && cast.framework) {
-				var context = cast.framework.CastContext.getInstance();
-				context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
-
-				if (this.remotePlayer.isConnected) {
-					this._setupRemotePlayer();
-					return;
-				}
-			}
-			this._setDefaultPlayer();
-		}
-	}, {
-		key: '_setDefaultPlayer',
-		value: function _setDefaultPlayer() {
-			this.proxy = new _default2.default(this.media, this.isVideo, this.options.classPrefix);
-			if (this.chromecastLayer) {
-				this.chromecastLayer.style.display = 'none';
-			}
-			this.setCurrentTime(this.currentMediaTime);
-			if (this.getCurrentTime() > 0 && !_constants.IS_IOS && !_constants.IS_ANDROID) {
-				this.play();
-			}
-		}
-	}, {
-		key: '_setupRemotePlayer',
-		value: function _setupRemotePlayer() {
-			var _this2 = this;
-
-			this.proxy = new _chromecast2.default(this.remotePlayer, this.remotePlayerController, this.media, this.options.cast.enableTracks);
-
-			var context = cast.framework.CastContext.getInstance(),
-			    castSession = context.getCurrentSession(),
-			    deviceInfo = this.layers.querySelector('.' + this.options.classPrefix + 'chromecast-info').querySelector('.device');
-
-			deviceInfo.innerText = castSession.getCastDevice().friendlyName;
-			this.chromecastLayer.style.display = '';
-
-			if (this.options.cast.enableTracks === true) {
-				(function () {
-					var captions = t.captionsButton !== undefined ? t.captionsButton.querySelectorAll('input[type=radio]') : null;
-
-					if (captions !== null) {
-						var _loop = function _loop(i, total) {
-							captions[i].addEventListener('click', function () {
-								var trackId = parseInt(captions[i].id.replace(/^.*?track_(\d+)_.*$/, "$1")),
-								    setTracks = captions[i].value === 'none' ? [] : [trackId],
-								    tracksInfo = new chrome.cast.media.EditTracksInfoRequest(setTracks);
-
-								castSession.getMediaSession().editTracksInfo(tracksInfo, function () {}, function (e) {
-									console.error(e);
-								});
-							});
-						};
-
-						for (var i = 0, total = captions.length; i < total; i++) {
-							_loop(i, total);
-						}
-					}
-				})();
-			}
-
-			this.media.addEventListener('timeupdate', function () {
-				_this2.currentMediaTime = _this2.getCurrentTime();
-			});
-		}
-	}, {
 		key: 'showControls',
 		value: function showControls(doAnimation) {
 			var t = this;
@@ -3943,14 +3767,14 @@ var MediaElementPlayer = function () {
 
 					var controls = t.container.querySelectorAll('.' + t.options.classPrefix + 'control');
 
-					var _loop2 = function _loop2(i, total) {
+					var _loop = function _loop(i, total) {
 						dom.fadeIn(controls[i], 200, function () {
 							dom.removeClass(controls[i], t.options.classPrefix + 'offscreen');
 						});
 					};
 
 					for (var i = 0, total = controls.length; i < total; i++) {
-						_loop2(i, total);
+						_loop(i, total);
 					}
 				})();
 			} else {
@@ -3978,7 +3802,7 @@ var MediaElementPlayer = function () {
 
 			doAnimation = doAnimation === undefined || doAnimation;
 
-			if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls || t.paused() && t.readyState() === 4 && (!t.options.hideVideoControlsOnLoad && t.getCurrentTime() <= 0 || !t.options.hideVideoControlsOnPause && t.getCurrentTime() > 0) || t.isVideo && !t.options.hideVideoControlsOnLoad && !t.readyState() || t.ended())) {
+			if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls || t.media.paused && t.media.readyState === 4 && (!t.options.hideVideoControlsOnLoad && t.media.currentTime <= 0 || !t.options.hideVideoControlsOnPause && t.media.currentTime > 0) || t.isVideo && !t.options.hideVideoControlsOnLoad && !t.media.readyState || t.media.ended)) {
 				return;
 			}
 
@@ -3993,7 +3817,7 @@ var MediaElementPlayer = function () {
 
 					var controls = t.container.querySelectorAll('.' + t.options.classPrefix + 'control');
 
-					var _loop3 = function _loop3(i, total) {
+					var _loop2 = function _loop2(i, total) {
 						dom.fadeOut(controls[i], 200, function () {
 							dom.addClass(controls[i], t.options.classPrefix + 'offscreen');
 							controls[i].style.display = '';
@@ -4001,7 +3825,7 @@ var MediaElementPlayer = function () {
 					};
 
 					for (var i = 0, total = controls.length; i < total; i++) {
-						_loop3(i, total);
+						_loop2(i, total);
 					}
 				})();
 			} else {
@@ -4124,8 +3948,6 @@ var MediaElementPlayer = function () {
 					}
 				}
 
-				t._setDefaultPlayer(t.media);
-
 				var event = (0, _general.createEvent)('controlsready', t.container);
 				t.container.dispatchEvent(event);
 
@@ -4139,9 +3961,9 @@ var MediaElementPlayer = function () {
 							var button = t.container.querySelector('.' + t.options.classPrefix + 'overlay-button'),
 							    pressed = button.getAttribute('aria-pressed');
 
-							if (t.paused() && pressed) {
+							if (t.media.paused && pressed) {
 								t.pause();
-							} else if (t.paused()) {
+							} else if (t.media.paused) {
 								t.play();
 							} else {
 								t.pause();
@@ -4187,7 +4009,7 @@ var MediaElementPlayer = function () {
 						});
 						t.container.addEventListener('mouseleave', function () {
 							if (t.controlsEnabled) {
-								if (!t.paused() && !t.options.alwaysShowControls) {
+								if (!t.media.paused && !t.options.alwaysShowControls) {
 									t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 								}
 							}
@@ -4221,7 +4043,7 @@ var MediaElementPlayer = function () {
 						if (_mejs2.default.players.hasOwnProperty(playerIndex)) {
 							var p = _mejs2.default.players[playerIndex];
 
-							if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused() && !p.ended()) {
+							if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused && !p.ended) {
 								p.pause();
 								p.hasFocus = false;
 							}
@@ -4232,7 +4054,7 @@ var MediaElementPlayer = function () {
 				t.media.addEventListener('ended', function () {
 					if (t.options.autoRewind) {
 						try {
-							t.setCurrentTime(0);
+							t.media.setCurrentTime(0);
 
 							setTimeout(function () {
 								var loadingElement = t.container.querySelector('.' + t.options.classPrefix + 'overlay-loading');
@@ -4248,7 +4070,7 @@ var MediaElementPlayer = function () {
 					if (typeof t.media.renderer.stop === 'function') {
 						t.media.renderer.stop();
 					} else {
-						t.pause();
+						t.media.pause();
 					}
 
 					if (t.setProgressRail) {
@@ -4267,7 +4089,7 @@ var MediaElementPlayer = function () {
 
 				t.media.addEventListener('loadedmetadata', function () {
 
-					(0, _time.calculateTimeFormat)(t.getDuration(), t.options, t.options.framesPerSecond || 25);
+					(0, _time.calculateTimeFormat)(t.duration, t.options, t.options.framesPerSecond || 25);
 
 					if (t.updateDuration) {
 						t.updateDuration();
@@ -4317,7 +4139,7 @@ var MediaElementPlayer = function () {
 						if (e.relatedTarget) {
 							if (t.keyboardAction && !e.relatedTarget.closest('.' + t.options.classPrefix + 'container')) {
 								t.keyboardAction = false;
-								if (t.isVideo && !t.options.alwaysShowControls && !t.paused()) {
+								if (t.isVideo && !t.options.alwaysShowControls && !t.media.paused) {
 									t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 								}
 							}
@@ -4353,7 +4175,7 @@ var MediaElementPlayer = function () {
 		}
 	}, {
 		key: '_handleError',
-		value: function _handleError(e, media, node) {
+		value: function _handleError(e) {
 			var t = this;
 
 			if (t.controls) {
@@ -4367,7 +4189,7 @@ var MediaElementPlayer = function () {
 			}
 
 			if (t.options.error) {
-				t.options.error(e, media, node);
+				t.options.error(e);
 			}
 		}
 	}, {
@@ -4696,7 +4518,7 @@ var MediaElementPlayer = function () {
 				t.controls.appendChild(element);
 				var children = t.controls.children;
 				for (var i = 0, total = children.length; i < total; i++) {
-					if (element === children[i]) {
+					if (element == children[i]) {
 						t.featurePosition[key] = i;
 						break;
 					}
@@ -4717,10 +4539,10 @@ var MediaElementPlayer = function () {
 				layer.className = t.options.classPrefix + 'iframe-overlay';
 				layer.addEventListener('click', function (e) {
 					if (t.options.clickToPlayPause) {
-						if (t.paused()) {
-							t.play();
+						if (t.media.paused) {
+							t.media.play();
 						} else {
-							t.pause();
+							t.media.pause();
 						}
 
 						e.preventDefault();
@@ -4822,51 +4644,6 @@ var MediaElementPlayer = function () {
 			}
 		}
 	}, {
-		key: 'buildchromecast',
-		value: function buildchromecast(player, controls, layers, media) {
-
-			var t = this,
-			    button = _document2.default.createElement('div'),
-			    castTitle = (0, _general.isString)(t.options.cast.title) ? t.options.cast.title : 'Chromecast';
-
-			if (!player.isVideo) {
-				return;
-			}
-
-			player.chromecastLayer = _document2.default.createElement('div');
-			player.chromecastLayer.className = t.options.classPrefix + 'chromecast-layer ' + t.options.classPrefix + 'layer';
-			player.chromecastLayer.innerHTML = '<div class="' + t.options.classPrefix + 'chromecast-info"></div>';
-			player.chromecastLayer.style.display = 'none';
-
-			layers.insertBefore(player.chromecastLayer, layers.firstChild);
-
-			button.className = t.options.classPrefix + 'button ' + t.options.classPrefix + 'chromecast-button';
-			button.innerHTML = '<button type="button" is="google-cast-button" aria-controls="' + t.id + '" title="' + castTitle + '" aria-label="' + castTitle + '" tabindex="0"></button>';
-
-			t.addControlElement(button, 'chromecast');
-			t.castButton = button;
-
-			player.chromecastLayer.innerHTML = '<div class="' + t.options.classPrefix + 'chromecast-container">' + ('<span class="' + t.options.classPrefix + 'chromecast-icon"></span>') + ('<span class="' + t.options.classPrefix + 'chromecast-info">' + _i18n2.default.t('mejs.chromecast-legend') + ' <span class="device"></span></span>') + '</div>';
-
-			if (media.originalNode.getAttribute('poster')) {
-				player.chromecastLayer.innerHTML += '<img src="' + media.originalNode.getAttribute('poster') + '" width="100%" height="100%">';
-			}
-		}
-	}, {
-		key: 'clearchromecast',
-		value: function clearchromecast(player) {
-
-			player.castPlayerController.stop();
-
-			if (player.castButton) {
-				player.castButton.remove();
-			}
-
-			if (player.chromecastLayer) {
-				player.chromecastLayer.remove();
-			}
-		}
-	}, {
 		key: 'buildposter',
 		value: function buildposter(player, controls, layers, media) {
 			var t = this,
@@ -4947,10 +4724,10 @@ var MediaElementPlayer = function () {
 					var button = t.container.querySelector('.' + t.options.classPrefix + 'overlay-button'),
 					    pressed = button.getAttribute('aria-pressed');
 
-					if (t.paused()) {
-						t.play();
+					if (media.paused) {
+						media.play();
 					} else {
-						t.pause();
+						media.pause();
 					}
 
 					button.setAttribute('aria-pressed', !!pressed);
@@ -4968,7 +4745,6 @@ var MediaElementPlayer = function () {
 			});
 
 			layers.appendChild(bigPlay);
-			var hasError = false;
 
 			if (t.media.rendererName !== null && (/(youtube|facebook)/i.test(t.media.rendererName) && !(player.media.originalNode.getAttribute('poster') || player.options.poster) || _constants.IS_STOCK_ANDROID)) {
 				bigPlay.style.display = 'none';
@@ -5006,7 +4782,7 @@ var MediaElementPlayer = function () {
 			});
 			media.addEventListener('pause', function () {
 				loading.style.display = 'none';
-				if (!_constants.IS_STOCK_ANDROID || !hasError) {
+				if (!_constants.IS_STOCK_ANDROID) {
 					bigPlay.style.display = '';
 				}
 				if (buffer() !== null) {
@@ -5046,12 +4822,15 @@ var MediaElementPlayer = function () {
 			});
 
 			media.addEventListener('error', function (e) {
-				t._handleError(e, t.media, t.node);
-				hasError = true;
+				t._handleError(e);
 				loading.style.display = 'none';
 				bigPlay.style.display = 'none';
 				if (buffer() !== null) {
 					buffer().style.display = 'none';
+				}
+				if (e.message) {
+					error.style.display = 'block';
+					error.querySelector('.' + t.options.classPrefix + 'overlay-error').innerHTML = e.message;
 				}
 			});
 
@@ -5103,77 +4882,75 @@ var MediaElementPlayer = function () {
 	}, {
 		key: 'play',
 		value: function play() {
-			this.proxy.play();
+			var t = this;
+
+			if (t.media.getCurrentTime() <= 0) {
+				t.load();
+			}
+			t.media.play();
 		}
 	}, {
 		key: 'pause',
 		value: function pause() {
-			this.proxy.pause();
-		}
-	}, {
-		key: 'paused',
-		value: function paused() {
-			return this.proxy.paused();
-		}
-	}, {
-		key: 'muted',
-		value: function muted() {
-			return this.proxy.muted();
-		}
-	}, {
-		key: 'ended',
-		value: function ended() {
-			return this.proxy.ended();
-		}
-	}, {
-		key: 'readyState',
-		value: function readyState() {
-			return this.proxy.readyState();
+			try {
+				this.media.pause();
+			} catch (e) {
+				
+			}
 		}
 	}, {
 		key: 'load',
 		value: function load() {
-			this.proxy.load();
+			var t = this;
+
+			if (!t.isLoaded) {
+				t.media.load();
+			}
+
+			t.isLoaded = true;
 		}
 	}, {
 		key: 'setMuted',
 		value: function setMuted(muted) {
-			this.proxy.setMuted(muted);
+			this.media.setMuted(muted);
 		}
 	}, {
 		key: 'setCurrentTime',
 		value: function setCurrentTime(time) {
-			this.proxy.setCurrentTime(time);
+			this.media.setCurrentTime(time);
 		}
 	}, {
 		key: 'getCurrentTime',
 		value: function getCurrentTime() {
-			return this.proxy.getCurrentTime();
+			return this.media.currentTime;
 		}
 	}, {
 		key: 'getDuration',
 		value: function getDuration() {
-			return this.proxy.getDuration();
+			return this.media.duration;
 		}
 	}, {
 		key: 'setVolume',
 		value: function setVolume(volume) {
-			this.proxy.setVolume(volume);
+			this.media.setVolume(volume);
 		}
 	}, {
 		key: 'getVolume',
 		value: function getVolume() {
-			return this.proxy.getVolume();
+			return this.media.volume;
 		}
 	}, {
 		key: 'setSrc',
 		value: function setSrc(src) {
-			this.proxy.setSrc(src);
-		}
-	}, {
-		key: 'getSrc',
-		value: function getSrc() {
-			return this.proxy.getSrc();
+			var t = this,
+			    layer = _document2.default.getElementById(t.media.id + '-iframe-overlay');
+
+			if (layer) {
+				layer.remove();
+			}
+
+			t.media.setSrc(src);
+			t.createIframeLayer();
 		}
 	}, {
 		key: 'remove',
@@ -5181,12 +4958,12 @@ var MediaElementPlayer = function () {
 			var t = this,
 			    rendererName = t.media.rendererName;
 
-			if (!t.paused()) {
-				t.pause();
+			if (!t.media.paused) {
+				t.media.pause();
 			}
 
-			var src = t.getSrc();
-			t.setSrc('');
+			var src = t.media.getSrc();
+			t.media.setSrc('');
 
 			for (var featureIndex in t.options.features) {
 				var feature = t.options.features[featureIndex];
@@ -5251,7 +5028,7 @@ var MediaElementPlayer = function () {
 						}
 					}
 					if (t.trackFiles) {
-						var _loop4 = function _loop4(_i4, _total4) {
+						var _loop3 = function _loop3(_i4, _total4) {
 							var track = t.trackFiles[_i4];
 							var newTrack = _document2.default.createElement('track');
 							newTrack.kind = track.kind;
@@ -5267,7 +5044,7 @@ var MediaElementPlayer = function () {
 						};
 
 						for (var _i4 = 0, _total4 = t.trackFiles.length; _i4 < _total4; _i4++) {
-							_loop4(_i4, _total4);
+							_loop3(_i4, _total4);
 						}
 					}
 
@@ -5303,686 +5080,33 @@ _window2.default.MediaElementPlayer = MediaElementPlayer;
 
 exports.default = MediaElementPlayer;
 
-},{"18":18,"19":19,"2":2,"26":26,"27":27,"28":28,"29":29,"3":3,"31":31,"5":5,"6":6,"7":7}],18:[function(_dereq_,module,exports){
-'use strict';
+(function ($) {
 
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var ChromecastPlayer = function () {
-	function ChromecastPlayer(player, controller, media, enableTracks) {
-		var _this = this;
-
-		_classCallCheck(this, ChromecastPlayer);
-
-		this.player = player;
-		this.controller = controller;
-		this.media = media;
-		this.ended = false;
-		this.enableTracks = enableTracks;
-
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_PAUSED_CHANGED, function () {
-			if (_this.player.isPaused) {
-				_this.pause();
+	if (typeof $ !== 'undefined') {
+		$.fn.mediaelementplayer = function (options) {
+			if (options === false) {
+				this.each(function () {
+					var player = $(this).data('mediaelementplayer');
+					if (player) {
+						player.remove();
+					}
+					$(this).removeData('mediaelementplayer');
+				});
 			} else {
-				_this.play();
-			}
-
-			_this.ended = false;
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_MUTED_CHANGED, function () {
-			_this.setMuted(_this.player.isMuted);
-			_this.volume = 0;
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_MEDIA_LOADED_CHANGED, function () {
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('loadedmetadata', _this.media);
-				_this.media.dispatchEvent(event);
-			}, 50);
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.VOLUME_LEVEL_CHANGED, function () {
-			_this.volume = _this.player.volumeLevel;
-			var event = mejs.Utils.createEvent('volumechange', _this.media);
-			_this.media.dispatchEvent(event);
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.DURATION_CHANGED, function () {
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('timeupdate', _this.media);
-				_this.media.dispatchEvent(event);
-			}, 50);
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.CURRENT_TIME_CHANGED, function () {
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('timeupdate', _this.media);
-				_this.media.dispatchEvent(event);
-			}, 50);
-
-			if (_this.getCurrentTime() >= _this.getDuration()) {
-				_this.ended = true;
-				setTimeout(function () {
-					var event = mejs.Utils.createEvent('ended', _this.media);
-					_this.media.dispatchEvent(event);
-				}, 50);
-			}
-		});
-		this.controller.addEventListener(cast.framework.RemotePlayerEventType.IS_MUTED_CHANGED, function () {
-			_this.setMuted(_this.player.isMuted);
-		});
-
-		this.load();
-	}
-
-	_createClass(ChromecastPlayer, [{
-		key: 'play',
-		value: function play() {
-			if (this.player.isPaused) {
-				this.controller.playOrPause();
-				var event = mejs.Utils.createEvent('play', this.media);
-				this.media.dispatchEvent(event);
-			}
-		}
-	}, {
-		key: 'pause',
-		value: function pause() {
-			if (!this.player.isPaused) {
-				this.controller.playOrPause();
-				var event = mejs.Utils.createEvent('pause', this.media);
-				this.media.dispatchEvent(event);
-			}
-		}
-	}, {
-		key: 'paused',
-		value: function paused() {
-			return this.player.isPaused;
-		}
-	}, {
-		key: 'muted',
-		value: function muted() {
-			return this.player.isMuted;
-		}
-	}, {
-		key: 'ended',
-		value: function ended() {
-			return this.ended;
-		}
-	}, {
-		key: 'readyState',
-		value: function readyState() {
-			return this.media.originalNode.readyState;
-		}
-	}, {
-		key: 'load',
-		value: function load() {
-			var _this2 = this;
-
-			var url = this.media.originalNode.getSrc(),
-			    type = mejs.Utils.getTypeFromFile(url),
-			    mediaInfo = new chrome.cast.media.MediaInfo(url, type),
-			    castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-
-			var event = mejs.Utils.createEvent('pause', this.media);
-			this.media.dispatchEvent(event);
-
-			if (this.enableTracks === true) {
-				var tracks = [],
-				    children = this.media.originalNode.children;
-
-				var counter = 1;
-
-				for (var i = 0, total = children.length; i < total; i++) {
-					var child = children[i],
-					    tag = child.tagName.toLowerCase();
-
-					if (tag === 'track' && (child.getAttribute('kind') === 'subtitles' || child.getAttribute('kind') === 'captions')) {
-						var el = new chrome.cast.media.Track(counter, chrome.cast.media.TrackType.TEXT);
-						el.trackContentId = mejs.Utils.absolutizeUrl(child.getAttribute('src'));
-						el.trackContentType = 'text/vtt';
-						el.subtype = chrome.cast.media.TextTrackType.SUBTITLES;
-						el.name = child.getAttribute('label');
-						el.language = child.getAttribute('srclang');
-						el.customData = null;
-						tracks.push(el);
-						counter++;
-					}
-				}
-				mediaInfo.textTrackStyle = new chrome.cast.media.TextTrackStyle();
-				mediaInfo.tracks = tracks;
-			}
-
-			mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
-			mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
-			mediaInfo.customData = null;
-			mediaInfo.duration = null;
-
-			if (this.media.originalNode.getAttribute('data-cast-title')) {
-				mediaInfo.metadata.title = this.media.originalNode.getAttribute('data-cast-title');
-			}
-
-			if (this.media.originalNode.getAttribute('data-cast-description')) {
-				mediaInfo.metadata.subtitle = this.media.originalNode.getAttribute('data-cast-description');
-			}
-
-			if (this.media.originalNode.getAttribute('poster')) {
-				mediaInfo.metadata.images = [{ 'url': mejs.Utils.absolutizeUrl(this.media.originalNode.getAttribute('poster')) }];
-			}
-
-			var request = new chrome.cast.media.LoadRequest(mediaInfo);
-
-			castSession.loadMedia(request).then(function () {
-				var currentTime = _this2.media.originalNode.getCurrentTime();
-				_this2.setCurrentTime(currentTime);
-				_this2.controller.playOrPause();
-
-				setTimeout(function () {
-					var event = mejs.Utils.createEvent('play', _this2.media);
-					_this2.media.dispatchEvent(event);
-				}, 50);
-			}, function (error) {
-				_this2._getErrorMessage(error);
-			});
-		}
-	}, {
-		key: 'setMuted',
-		value: function setMuted(value) {
-			var _this3 = this;
-
-			if (value === true && !this.player.isMuted) {
-				this.controller.muteOrUnmute();
-			} else if (value === false && this.player.isMuted) {
-				this.controller.muteOrUnmute();
-			}
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('volumechange', _this3.media);
-				_this3.media.dispatchEvent(event);
-			}, 50);
-		}
-	}, {
-		key: 'setCurrentTime',
-		value: function setCurrentTime(value) {
-			var _this4 = this;
-
-			this.player.currentTime = value;
-			this.currentTime = this.player.currentTime;
-			this.controller.seek();
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('timeupdate', _this4.media);
-				_this4.media.dispatchEvent(event);
-			}, 50);
-		}
-	}, {
-		key: 'getCurrentTime',
-		value: function getCurrentTime() {
-			return this.player.currentTime;
-		}
-	}, {
-		key: 'getDuration',
-		value: function getDuration() {
-			return this.player.duration;
-		}
-	}, {
-		key: 'setVolume',
-		value: function setVolume(value) {
-			var _this5 = this;
-
-			this.volume = value;
-			this.player.volumeLevel = value;
-			this.controller.setVolumeLevel();
-			setTimeout(function () {
-				var event = mejs.Utils.createEvent('volumechange', _this5.media);
-				_this5.media.dispatchEvent(event);
-			}, 50);
-		}
-	}, {
-		key: 'getVolume',
-		value: function getVolume() {
-			return this.player.volumeLevel;
-		}
-	}, {
-		key: 'getSrc',
-		value: function getSrc() {
-			return this.media.originalNode.getSrc();
-		}
-	}, {
-		key: 'setSrc',
-		value: function setSrc(value) {
-			var url = typeof value === 'string' ? value : value[0].src;
-			this.media.originalNode.setAttribute('src', url);
-			this.load();
-		}
-	}, {
-		key: '_getErrorMessage',
-		value: function _getErrorMessage(error) {
-
-			var description = error.description ? ' : ' + error.description : '.';
-
-			var message = void 0;
-
-			switch (error.code) {
-				case chrome.cast.ErrorCode.API_NOT_INITIALIZED:
-					message = 'The API is not initialized' + description;
-					break;
-				case chrome.cast.ErrorCode.CANCEL:
-					message = 'The operation was canceled by the user' + description;
-					break;
-				case chrome.cast.ErrorCode.CHANNEL_ERROR:
-					message = 'A channel to the receiver is not available' + description;
-					break;
-				case chrome.cast.ErrorCode.EXTENSION_MISSING:
-					message = 'The Cast extension is not available' + description;
-					break;
-				case chrome.cast.ErrorCode.INVALID_PARAMETER:
-					message = 'The parameters to the operation were not valid' + description;
-					break;
-				case chrome.cast.ErrorCode.RECEIVER_UNAVAILABLE:
-					message = 'No receiver was compatible with the session request' + description;
-					break;
-				case chrome.cast.ErrorCode.SESSION_ERROR:
-					message = 'A session could not be created, or a session was invalid' + description;
-					break;
-				case chrome.cast.ErrorCode.TIMEOUT:
-					message = 'The operation timed out' + description;
-					break;
-				default:
-					message = 'Unknown error: ' + error.code;
-					break;
-			}
-
-			console.error(message);
-		}
-	}]);
-
-	return ChromecastPlayer;
-}();
-
-exports.default = ChromecastPlayer;
-
-},{}],19:[function(_dereq_,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var DefaultPlayer = function () {
-	function DefaultPlayer(media, isVideo, classPrefix) {
-		_classCallCheck(this, DefaultPlayer);
-
-		this.media = media;
-		this.isVideo = isVideo;
-		this.classPrefix = classPrefix;
-	}
-
-	_createClass(DefaultPlayer, [{
-		key: 'play',
-		value: function play() {
-			var t = this;
-
-			if (t.media.getCurrentTime() <= 0) {
-				t.load();
-			}
-			t.media.play();
-		}
-	}, {
-		key: 'pause',
-		value: function pause() {
-			this.media.pause();
-		}
-	}, {
-		key: 'load',
-		value: function load() {
-			var t = this;
-
-			if (!t.isLoaded) {
-				t.media.load();
-			}
-
-			t.isLoaded = true;
-		}
-	}, {
-		key: 'setMuted',
-		value: function setMuted(muted) {
-			this.media.setMuted(muted);
-		}
-	}, {
-		key: 'paused',
-		value: function paused() {
-			return this.media.paused;
-		}
-	}, {
-		key: 'muted',
-		value: function muted() {
-			return this.media.muted;
-		}
-	}, {
-		key: 'ended',
-		value: function ended() {
-			return this.media.ended;
-		}
-	}, {
-		key: 'readyState',
-		value: function readyState() {
-			return this.media.readyState;
-		}
-	}, {
-		key: 'setCurrentTime',
-		value: function setCurrentTime(time) {
-			this.media.setCurrentTime(time);
-		}
-	}, {
-		key: 'getCurrentTime',
-		value: function getCurrentTime() {
-			return this.media.currentTime;
-		}
-	}, {
-		key: 'getDuration',
-		value: function getDuration() {
-			return this.media.getDuration();
-		}
-	}, {
-		key: 'setVolume',
-		value: function setVolume(volume) {
-			this.media.setVolume(volume);
-		}
-	}, {
-		key: 'getVolume',
-		value: function getVolume() {
-			return this.media.getVolume();
-		}
-	}, {
-		key: 'setSrc',
-		value: function setSrc(src) {
-			var t = this,
-			    layer = document.getElementById(t.media.id + '-iframe-overlay');
-
-			if (layer) {
-				layer.remove();
-			}
-
-			t.media.setSrc(src);
-			t.createIframeLayer();
-		}
-	}, {
-		key: 'createIframeLayer',
-		value: function createIframeLayer() {
-			var t = this;
-
-			if (t.isVideo && t.media.rendererName !== null && t.media.rendererName.indexOf('iframe') > -1 && !document.getElementById(t.media.id + '-iframe-overlay')) {
-
-				var layer = document.createElement('div'),
-				    target = document.getElementById(t.media.id + '_' + t.media.rendererName);
-
-				layer.id = t.media.id + '-iframe-overlay';
-				layer.className = t.classPrefix + 'iframe-overlay';
-				layer.addEventListener('click', function (e) {
-					if (t.options.clickToPlayPause) {
-						if (t.media.paused) {
-							t.media.play();
-						} else {
-							t.media.pause();
-						}
-
-						e.preventDefault();
-						e.stopPropagation();
-					}
+				this.each(function () {
+					$(this).data('mediaelementplayer', new MediaElementPlayer(this, options));
 				});
-
-				target.parentNode.insertBefore(layer, target);
 			}
-		}
-	}]);
+			return this;
+		};
 
-	return DefaultPlayer;
-}();
-
-exports.default = DefaultPlayer;
-
-},{}],20:[function(_dereq_,module,exports){
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _window = _dereq_(3);
-
-var _window2 = _interopRequireDefault(_window);
-
-var _mejs = _dereq_(7);
-
-var _mejs2 = _interopRequireDefault(_mejs);
-
-var _renderer = _dereq_(8);
-
-var _general = _dereq_(28);
-
-var _media = _dereq_(29);
-
-var _constants = _dereq_(26);
-
-var _dom = _dereq_(27);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var NativeDash = {
-
-	promise: null,
-
-	load: function load(settings) {
-		if (typeof dashjs !== 'undefined') {
-			NativeDash.promise = new Promise(function (resolve) {
-				resolve();
-			}).then(function () {
-				NativeDash._createPlayer(settings);
-			});
-		} else if (!NativeDash.promise) {
-			settings.options.path = typeof settings.options.path === 'string' ? settings.options.path : 'https://cdn.dashjs.org/latest/dash.all.min.js';
-
-			NativeDash.promise = NativeDash.promise || (0, _dom.loadScript)(settings.options.path);
-			NativeDash.promise.then(function () {
-				NativeDash._createPlayer(settings);
-			});
-		}
-
-		return NativeDash.promise;
-	},
-
-	_createPlayer: function _createPlayer(settings) {
-		var player = dashjs.MediaPlayer().create();
-		_window2.default['__ready__' + settings.id](player);
+		$(_document2.default).ready(function () {
+			$('.' + config.classPrefix + 'player').mediaelementplayer();
+		});
 	}
-};
+})(_mejs2.default.$);
 
-var DashNativeRenderer = {
-	name: 'native_dash',
-	options: {
-		prefix: 'native_dash',
-		dash: {
-			path: 'https://cdn.dashjs.org/latest/dash.all.min.js',
-			debug: false,
-			drm: {},
-
-			robustnessLevel: ''
-		}
-	},
-
-	canPlayType: function canPlayType(type) {
-		return _constants.HAS_MSE && ['application/dash+xml'].indexOf(type.toLowerCase()) > -1;
-	},
-
-	create: function create(mediaElement, options, mediaFiles) {
-
-		var originalNode = mediaElement.originalNode,
-		    id = mediaElement.id + '_' + options.prefix,
-		    autoplay = originalNode.autoplay;
-
-		var node = null,
-		    dashPlayer = null;
-
-		node = originalNode.cloneNode(true);
-		options = Object.assign(options, mediaElement.options);
-
-		var props = _mejs2.default.html5media.properties,
-		    assignGettersSetters = function assignGettersSetters(propName) {
-			var capName = '' + propName.substring(0, 1).toUpperCase() + propName.substring(1);
-
-			node['get' + capName] = function () {
-				return dashPlayer !== null ? node[propName] : null;
-			};
-
-			node['set' + capName] = function (value) {
-				if (_mejs2.default.html5media.readOnlyProperties.indexOf(propName) === -1) {
-					if (propName === 'src') {
-						if (typeof value === 'string') {
-							node[propName] = value;
-							if (dashPlayer !== null) {
-								dashPlayer.attachSource(value);
-								if (autoplay) {
-									dashPlayer.play();
-								}
-							}
-						} else if (value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && value.src) {
-							node[propName] = value.src;
-							if (dashPlayer !== null) {
-								if (value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && _typeof(value.drm) === 'object') {
-									dashPlayer.setProtectionData(value.drm);
-									if ((0, _general.isString)(options.dash.robustnessLevel) && options.dash.robustnessLevel) {
-										dashPlayer.getProtectionController().setRobustnessLevel(options.dash.robustnessLevel);
-									}
-								}
-								dashPlayer.attachSource(value.src);
-								if (autoplay) {
-									dashPlayer.play();
-								}
-							}
-						}
-					} else {
-						node[propName] = value;
-					}
-				}
-			};
-		};
-
-		for (var i = 0, total = props.length; i < total; i++) {
-			assignGettersSetters(props[i]);
-		}
-
-		_window2.default['__ready__' + id] = function (_dashPlayer) {
-			mediaElement.dashPlayer = dashPlayer = _dashPlayer;
-
-			var events = _mejs2.default.html5media.events.concat(['click', 'mouseover', 'mouseout']),
-			    dashEvents = dashjs.MediaPlayer.events,
-			    assignEvents = function assignEvents(eventName) {
-				if (eventName === 'loadedmetadata') {
-					dashPlayer.getDebug().setLogToBrowserConsole(options.dash.debug);
-					dashPlayer.initialize();
-					dashPlayer.setScheduleWhilePaused(false);
-					dashPlayer.setFastSwitchEnabled(true);
-					dashPlayer.attachView(node);
-					dashPlayer.setAutoPlay(false);
-
-					if (_typeof(options.dash.drm) === 'object' && !_mejs2.default.Utils.isObjectEmpty(options.dash.drm)) {
-						dashPlayer.setProtectionData(options.dash.drm);
-						if ((0, _general.isString)(options.dash.robustnessLevel) && options.dash.robustnessLevel) {
-							dashPlayer.getProtectionController().setRobustnessLevel(options.dash.robustnessLevel);
-						}
-					}
-					dashPlayer.attachSource(node.getSrc());
-				}
-
-				node.addEventListener(eventName, function (e) {
-					var event = (0, _general.createEvent)(e.type, mediaElement);
-					mediaElement.dispatchEvent(event);
-				});
-			};
-
-			for (var _i = 0, _total = events.length; _i < _total; _i++) {
-				assignEvents(events[_i]);
-			}
-
-			var assignMdashEvents = function assignMdashEvents(e) {
-				var event = (0, _general.createEvent)(e.type, node);
-				event.data = e;
-				mediaElement.dispatchEvent(event);
-
-				if (e.type.toLowerCase() === 'error') {
-					console.error(e);
-				}
-			};
-
-			for (var eventType in dashEvents) {
-				if (dashEvents.hasOwnProperty(eventType)) {
-					dashPlayer.on(dashEvents[eventType], assignMdashEvents);
-				}
-			}
-		};
-
-		if (mediaFiles && mediaFiles.length > 0) {
-			for (var _i2 = 0, _total2 = mediaFiles.length; _i2 < _total2; _i2++) {
-				if (_renderer.renderer.renderers[options.prefix].canPlayType(mediaFiles[_i2].type)) {
-					node.setAttribute('src', mediaFiles[_i2].src);
-					if (typeof mediaFiles[_i2].drm !== 'undefined') {
-						options.dash.drm = mediaFiles[_i2].drm;
-					}
-					break;
-				}
-			}
-		}
-
-		node.setAttribute('id', id);
-
-		originalNode.parentNode.insertBefore(node, originalNode);
-		originalNode.autoplay = false;
-		originalNode.style.display = 'none';
-
-		node.setSize = function (width, height) {
-			node.style.width = width + 'px';
-			node.style.height = height + 'px';
-			return node;
-		};
-
-		node.hide = function () {
-			node.pause();
-			node.style.display = 'none';
-			return node;
-		};
-
-		node.show = function () {
-			node.style.display = '';
-			return node;
-		};
-
-		node.destroy = function () {
-			if (dashPlayer !== null) {
-				dashPlayer.reset();
-			}
-		};
-
-		var event = (0, _general.createEvent)('rendererready', node);
-		mediaElement.dispatchEvent(event);
-
-		mediaElement.promises.push(NativeDash.load({
-			options: options.dash,
-			id: id
-		}));
-
-		return node;
-	}
-};
-
-_media.typeChecks.push(function (url) {
-	return ~url.toLowerCase().indexOf('.mpd') ? 'application/dash+xml' : null;
-});
-
-_renderer.renderer.add(DashNativeRenderer);
-
-},{"26":26,"27":27,"28":28,"29":29,"3":3,"7":7,"8":8}],21:[function(_dereq_,module,exports){
+},{"2":2,"20":20,"21":21,"22":22,"23":23,"25":25,"3":3,"5":5,"6":6,"7":7}],18:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -6010,11 +5134,11 @@ var _i18n2 = _interopRequireDefault(_i18n);
 
 var _renderer = _dereq_(8);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
-var _media = _dereq_(29);
+var _media = _dereq_(23);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -6396,486 +5520,7 @@ if (hasFlash) {
 	_renderer.renderer.add(FlashMediaElementAudioOggRenderer);
 }
 
-},{"2":2,"26":26,"28":28,"29":29,"3":3,"5":5,"7":7,"8":8}],22:[function(_dereq_,module,exports){
-'use strict';
-
-var _window = _dereq_(3);
-
-var _window2 = _interopRequireDefault(_window);
-
-var _mejs = _dereq_(7);
-
-var _mejs2 = _interopRequireDefault(_mejs);
-
-var _renderer = _dereq_(8);
-
-var _general = _dereq_(28);
-
-var _constants = _dereq_(26);
-
-var _media = _dereq_(29);
-
-var _dom = _dereq_(27);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var NativeFlv = {
-
-	promise: null,
-
-	load: function load(settings) {
-		if (typeof flvjs !== 'undefined') {
-			NativeFlv.promise = new Promise(function (resolve) {
-				resolve();
-			}).then(function () {
-				NativeFlv._createPlayer(settings);
-			});
-		} else if (!NativeFlv.promise) {
-			settings.options.path = typeof settings.options.path === 'string' ? settings.options.path : 'https://cdnjs.cloudflare.com/ajax/libs/flv.js/1.3.0/flv.min.js';
-
-			NativeFlv.promise = NativeFlv.promise || (0, _dom.loadScript)(settings.options.path);
-			NativeFlv.promise.then(function () {
-				NativeFlv._createPlayer(settings);
-			});
-		}
-
-		return NativeFlv.promise;
-	},
-
-	_createPlayer: function _createPlayer(settings) {
-		flvjs.LoggingControl.enableDebug = settings.options.debug;
-		flvjs.LoggingControl.enableVerbose = settings.options.debug;
-		var player = flvjs.createPlayer(settings.options);
-		_window2.default['__ready__' + settings.id](player);
-		return player;
-	}
-};
-
-var FlvNativeRenderer = {
-	name: 'native_flv',
-	options: {
-		prefix: 'native_flv',
-		flv: {
-			path: 'https://cdnjs.cloudflare.com/ajax/libs/flv.js/1.3.0/flv.min.js',
-
-			cors: true,
-			debug: false
-		}
-	},
-
-	canPlayType: function canPlayType(type) {
-		return _constants.HAS_MSE && ['video/x-flv', 'video/flv'].indexOf(type.toLowerCase()) > -1;
-	},
-
-	create: function create(mediaElement, options, mediaFiles) {
-
-		var originalNode = mediaElement.originalNode,
-		    id = mediaElement.id + '_' + options.prefix;
-
-		var node = null,
-		    flvPlayer = null;
-
-		node = originalNode.cloneNode(true);
-		options = Object.assign(options, mediaElement.options);
-
-		var props = _mejs2.default.html5media.properties,
-		    assignGettersSetters = function assignGettersSetters(propName) {
-			var capName = '' + propName.substring(0, 1).toUpperCase() + propName.substring(1);
-
-			node['get' + capName] = function () {
-				return flvPlayer !== null ? node[propName] : null;
-			};
-
-			node['set' + capName] = function (value) {
-				if (_mejs2.default.html5media.readOnlyProperties.indexOf(propName) === -1) {
-					node[propName] = value;
-
-					if (flvPlayer !== null) {
-						if (propName === 'src') {
-							var _flvOptions = {};
-							_flvOptions.type = 'flv';
-							_flvOptions.url = value;
-							_flvOptions.cors = options.flv.cors;
-							_flvOptions.debug = options.flv.debug;
-							_flvOptions.path = options.flv.path;
-
-							flvPlayer.destroy();
-							flvPlayer = NativeFlv._createPlayer({
-								options: _flvOptions,
-								id: id
-							});
-							flvPlayer.attachMediaElement(node);
-							flvPlayer.load();
-						}
-					}
-				}
-			};
-		};
-
-		for (var i = 0, total = props.length; i < total; i++) {
-			assignGettersSetters(props[i]);
-		}
-
-		_window2.default['__ready__' + id] = function (_flvPlayer) {
-			mediaElement.flvPlayer = flvPlayer = _flvPlayer;
-
-			var events = _mejs2.default.html5media.events.concat(['click', 'mouseover', 'mouseout']),
-			    flvEvents = flvjs.Events,
-			    assignEvents = function assignEvents(eventName) {
-				if (eventName === 'loadedmetadata') {
-					flvPlayer.unload();
-					flvPlayer.detachMediaElement();
-					flvPlayer.attachMediaElement(node);
-					flvPlayer.load();
-				}
-
-				node.addEventListener(eventName, function (e) {
-					var event = (0, _general.createEvent)(e.type, mediaElement);
-					mediaElement.dispatchEvent(event);
-				});
-			};
-
-			for (var _i = 0, _total = events.length; _i < _total; _i++) {
-				assignEvents(events[_i]);
-			}
-
-			var assignFlvEvents = function assignFlvEvents(name, e) {
-				var event = (0, _general.createEvent)(name, node);
-				event.data = e;
-				mediaElement.dispatchEvent(event);
-			};
-
-			var _loop = function _loop(eventType) {
-				if (flvEvents.hasOwnProperty(eventType)) {
-					flvPlayer.on(flvEvents[eventType], function (e) {
-						assignFlvEvents(flvEvents[eventType], e);
-					});
-				}
-			};
-
-			for (var eventType in flvEvents) {
-				_loop(eventType);
-			}
-		};
-
-		if (mediaFiles && mediaFiles.length > 0) {
-			for (var _i2 = 0, _total2 = mediaFiles.length; _i2 < _total2; _i2++) {
-				if (_renderer.renderer.renderers[options.prefix].canPlayType(mediaFiles[_i2].type)) {
-					node.setAttribute('src', mediaFiles[_i2].src);
-					break;
-				}
-			}
-		}
-
-		node.setAttribute('id', id);
-
-		originalNode.parentNode.insertBefore(node, originalNode);
-		originalNode.autoplay = false;
-		originalNode.style.display = 'none';
-
-		var flvOptions = {};
-		flvOptions.type = 'flv';
-		flvOptions.url = node.src;
-		flvOptions.cors = options.flv.cors;
-		flvOptions.debug = options.flv.debug;
-		flvOptions.path = options.flv.path;
-
-		node.setSize = function (width, height) {
-			node.style.width = width + 'px';
-			node.style.height = height + 'px';
-			return node;
-		};
-
-		node.hide = function () {
-			if (flvPlayer !== null) {
-				flvPlayer.pause();
-			}
-			node.style.display = 'none';
-			return node;
-		};
-
-		node.show = function () {
-			node.style.display = '';
-			return node;
-		};
-
-		node.destroy = function () {
-			if (flvPlayer !== null) {
-				flvPlayer.destroy();
-			}
-		};
-
-		var event = (0, _general.createEvent)('rendererready', node);
-		mediaElement.dispatchEvent(event);
-
-		mediaElement.promises.push(NativeFlv.load({
-			options: flvOptions,
-			id: id
-		}));
-
-		return node;
-	}
-};
-
-_media.typeChecks.push(function (url) {
-	return ~url.toLowerCase().indexOf('.flv') ? 'video/flv' : null;
-});
-
-_renderer.renderer.add(FlvNativeRenderer);
-
-},{"26":26,"27":27,"28":28,"29":29,"3":3,"7":7,"8":8}],23:[function(_dereq_,module,exports){
-'use strict';
-
-var _window = _dereq_(3);
-
-var _window2 = _interopRequireDefault(_window);
-
-var _mejs = _dereq_(7);
-
-var _mejs2 = _interopRequireDefault(_mejs);
-
-var _renderer = _dereq_(8);
-
-var _general = _dereq_(28);
-
-var _constants = _dereq_(26);
-
-var _media = _dereq_(29);
-
-var _dom = _dereq_(27);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var NativeHls = {
-
-	promise: null,
-
-	load: function load(settings) {
-		if (typeof Hls !== 'undefined') {
-			NativeHls.promise = new Promise(function (resolve) {
-				resolve();
-			}).then(function () {
-				NativeHls._createPlayer(settings);
-			});
-		} else if (!NativeHls.promise) {
-			settings.options.path = typeof settings.options.path === 'string' ? settings.options.path : 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/0.7.9/hls.min.js';
-
-			NativeHls.promise = NativeHls.promise || (0, _dom.loadScript)(settings.options.path);
-			NativeHls.promise.then(function () {
-				NativeHls._createPlayer(settings);
-			});
-		}
-
-		return NativeHls.promise;
-	},
-
-	_createPlayer: function _createPlayer(settings) {
-		var player = new Hls(settings.options);
-		_window2.default['__ready__' + settings.id](player);
-		return player;
-	}
-};
-
-var HlsNativeRenderer = {
-	name: 'native_hls',
-	options: {
-		prefix: 'native_hls',
-		hls: {
-			path: 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/0.7.9/hls.min.js',
-
-			autoStartLoad: false,
-			debug: false
-		}
-	},
-
-	canPlayType: function canPlayType(type) {
-		return _constants.HAS_MSE && ['application/x-mpegurl', 'vnd.apple.mpegurl', 'audio/mpegurl', 'audio/hls', 'video/hls'].indexOf(type.toLowerCase()) > -1;
-	},
-
-	create: function create(mediaElement, options, mediaFiles) {
-
-		var originalNode = mediaElement.originalNode,
-		    id = mediaElement.id + '_' + options.prefix,
-		    preload = originalNode.getAttribute('preload'),
-		    autoplay = originalNode.autoplay;
-
-		var hlsPlayer = null,
-		    node = null;
-
-		node = originalNode.cloneNode(true);
-		options = Object.assign(options, mediaElement.options);
-		options.hls.autoStartLoad = preload && preload !== 'none' || autoplay;
-
-		var props = _mejs2.default.html5media.properties,
-		    assignGettersSetters = function assignGettersSetters(propName) {
-			var capName = '' + propName.substring(0, 1).toUpperCase() + propName.substring(1);
-
-			node['get' + capName] = function () {
-				return hlsPlayer !== null ? node[propName] : null;
-			};
-
-			node['set' + capName] = function (value) {
-				if (_mejs2.default.html5media.readOnlyProperties.indexOf(propName) === -1) {
-					node[propName] = value;
-
-					if (hlsPlayer !== null) {
-						if (propName === 'src') {
-							hlsPlayer.destroy();
-							hlsPlayer = NativeHls._createPlayer({
-								options: options.hls,
-								id: id
-							});
-
-							hlsPlayer.loadSource(value);
-							hlsPlayer.attachMedia(node);
-						}
-					}
-				}
-			};
-		};
-
-		for (var i = 0, total = props.length; i < total; i++) {
-			assignGettersSetters(props[i]);
-		}
-
-		_window2.default['__ready__' + id] = function (_hlsPlayer) {
-			mediaElement.hlsPlayer = hlsPlayer = _hlsPlayer;
-			var events = _mejs2.default.html5media.events.concat(['click', 'mouseover', 'mouseout']),
-			    hlsEvents = Hls.Events,
-			    assignEvents = function assignEvents(eventName) {
-				if (eventName === 'loadedmetadata') {
-					var url = mediaElement.originalNode.src;
-					hlsPlayer.detachMedia();
-					hlsPlayer.loadSource(url);
-					hlsPlayer.attachMedia(node);
-				}
-
-				node.addEventListener(eventName, function (e) {
-					var event = (0, _general.createEvent)(e.type, mediaElement);
-					mediaElement.dispatchEvent(event);
-				});
-			};
-
-			for (var _i = 0, _total = events.length; _i < _total; _i++) {
-				assignEvents(events[_i]);
-			}
-
-			var recoverDecodingErrorDate = void 0,
-			    recoverSwapAudioCodecDate = void 0;
-			var assignHlsEvents = function assignHlsEvents(e, data) {
-				var event = (0, _general.createEvent)(e, node);
-				event.data = data;
-				mediaElement.dispatchEvent(event);
-
-				if (e === 'hlsError') {
-					console.warn(e, data);
-
-					if (data.fatal) {
-						switch (data.type) {
-							case 'mediaError':
-								var now = new Date().getTime();
-								if (!recoverDecodingErrorDate || now - recoverDecodingErrorDate > 3000) {
-									recoverDecodingErrorDate = new Date().getTime();
-									hlsPlayer.recoverMediaError();
-								} else if (!recoverSwapAudioCodecDate || now - recoverSwapAudioCodecDate > 3000) {
-									recoverSwapAudioCodecDate = new Date().getTime();
-									console.warn('Attempting to swap Audio Codec and recover from media error');
-									hlsPlayer.swapAudioCodec();
-									hlsPlayer.recoverMediaError();
-								} else {
-									console.error('Cannot recover, last media error recovery failed');
-								}
-								break;
-							case 'networkError':
-								console.error('Network error');
-								break;
-							default:
-								hlsPlayer.destroy();
-								break;
-						}
-					}
-				}
-			};
-
-			for (var eventType in hlsEvents) {
-				if (hlsEvents.hasOwnProperty(eventType)) {
-					hlsPlayer.on(hlsEvents[eventType], assignHlsEvents);
-				}
-			}
-		};
-
-		if (mediaFiles && mediaFiles.length > 0) {
-			for (var _i2 = 0, _total2 = mediaFiles.length; _i2 < _total2; _i2++) {
-				if (_renderer.renderer.renderers[options.prefix].canPlayType(mediaFiles[_i2].type)) {
-					node.setAttribute('src', mediaFiles[_i2].src);
-					break;
-				}
-			}
-		}
-
-		if (preload !== 'auto' && !autoplay) {
-			node.addEventListener('play', function () {
-				if (hlsPlayer !== null) {
-					hlsPlayer.startLoad();
-				}
-			});
-
-			node.addEventListener('pause', function () {
-				if (hlsPlayer !== null) {
-					hlsPlayer.stopLoad();
-				}
-			});
-		}
-
-		node.setAttribute('id', id);
-
-		originalNode.parentNode.insertBefore(node, originalNode);
-		originalNode.autoplay = false;
-		originalNode.style.display = 'none';
-
-		node.setSize = function (width, height) {
-			node.style.width = width + 'px';
-			node.style.height = height + 'px';
-			return node;
-		};
-
-		node.hide = function () {
-			node.pause();
-			node.style.display = 'none';
-			return node;
-		};
-
-		node.show = function () {
-			node.style.display = '';
-			return node;
-		};
-
-		node.destroy = function () {
-			if (hlsPlayer !== null) {
-				hlsPlayer.stopLoad();
-				hlsPlayer.destroy();
-			}
-		};
-
-		var event = (0, _general.createEvent)('rendererready', node);
-		mediaElement.dispatchEvent(event);
-
-		mediaElement.promises.push(NativeHls.load({
-			options: options.hls,
-			id: id
-		}));
-
-		return node;
-	}
-};
-
-_media.typeChecks.push(function (url) {
-	return ~url.toLowerCase().indexOf('.m3u8') ? 'application/x-mpegURL' : null;
-});
-
-_renderer.renderer.add(HlsNativeRenderer);
-
-},{"26":26,"27":27,"28":28,"29":29,"3":3,"7":7,"8":8}],24:[function(_dereq_,module,exports){
+},{"2":2,"20":20,"22":22,"23":23,"3":3,"5":5,"7":7,"8":8}],19:[function(_dereq_,module,exports){
 'use strict';
 
 var _window = _dereq_(3);
@@ -6892,9 +5537,9 @@ var _mejs2 = _interopRequireDefault(_mejs);
 
 var _renderer = _dereq_(8);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
-var _constants = _dereq_(26);
+var _constants = _dereq_(20);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -7001,502 +5646,7 @@ _window2.default.HtmlMediaElement = _mejs2.default.HtmlMediaElement = HtmlMediaE
 
 _renderer.renderer.add(HtmlMediaElement);
 
-},{"2":2,"26":26,"28":28,"3":3,"7":7,"8":8}],25:[function(_dereq_,module,exports){
-'use strict';
-
-var _window = _dereq_(3);
-
-var _window2 = _interopRequireDefault(_window);
-
-var _document = _dereq_(2);
-
-var _document2 = _interopRequireDefault(_document);
-
-var _mejs = _dereq_(7);
-
-var _mejs2 = _interopRequireDefault(_mejs);
-
-var _renderer = _dereq_(8);
-
-var _general = _dereq_(28);
-
-var _media = _dereq_(29);
-
-var _dom = _dereq_(27);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var YouTubeApi = {
-	isIframeStarted: false,
-
-	isIframeLoaded: false,
-
-	iframeQueue: [],
-
-	enqueueIframe: function enqueueIframe(settings) {
-		YouTubeApi.isLoaded = typeof YT !== 'undefined' && YT.loaded;
-
-		if (YouTubeApi.isLoaded) {
-			YouTubeApi.createIframe(settings);
-		} else {
-			YouTubeApi.loadIframeApi();
-			YouTubeApi.iframeQueue.push(settings);
-		}
-	},
-
-	loadIframeApi: function loadIframeApi() {
-		if (!YouTubeApi.isIframeStarted) {
-			(0, _dom.loadScript)('https://www.youtube.com/player_api');
-			YouTubeApi.isIframeStarted = true;
-		}
-	},
-
-	iFrameReady: function iFrameReady() {
-
-		YouTubeApi.isLoaded = true;
-		YouTubeApi.isIframeLoaded = true;
-
-		while (YouTubeApi.iframeQueue.length > 0) {
-			var settings = YouTubeApi.iframeQueue.pop();
-			YouTubeApi.createIframe(settings);
-		}
-	},
-
-	createIframe: function createIframe(settings) {
-		return new YT.Player(settings.containerId, settings);
-	},
-
-	getYouTubeId: function getYouTubeId(url) {
-
-		var youTubeId = '';
-
-		if (url.indexOf('?') > 0) {
-			youTubeId = YouTubeApi.getYouTubeIdFromParam(url);
-
-			if (youTubeId === '') {
-				youTubeId = YouTubeApi.getYouTubeIdFromUrl(url);
-			}
-		} else {
-			youTubeId = YouTubeApi.getYouTubeIdFromUrl(url);
-		}
-
-		return youTubeId;
-	},
-
-	getYouTubeIdFromParam: function getYouTubeIdFromParam(url) {
-
-		if (url === undefined || url === null || !url.trim().length) {
-			return null;
-		}
-
-		var parts = url.split('?'),
-		    parameters = parts[1].split('&');
-
-		var youTubeId = '';
-
-		for (var i = 0, total = parameters.length; i < total; i++) {
-			var paramParts = parameters[i].split('=');
-			if (paramParts[0] === 'v') {
-				youTubeId = paramParts[1];
-				break;
-			}
-		}
-
-		return youTubeId;
-	},
-
-	getYouTubeIdFromUrl: function getYouTubeIdFromUrl(url) {
-
-		if (url === undefined || url === null || !url.trim().length) {
-			return null;
-		}
-
-		var parts = url.split('?');
-		url = parts[0];
-		return url.substring(url.lastIndexOf('/') + 1);
-	},
-
-	getYouTubeNoCookieUrl: function getYouTubeNoCookieUrl(url) {
-		if (url === undefined || url === null || !url.trim().length || url.indexOf('//www.youtube') === -1) {
-			return url;
-		}
-
-		var parts = url.split('/');
-		parts[2] = parts[2].replace('.com', '-nocookie.com');
-		return parts.join('/');
-	}
-};
-
-var YouTubeIframeRenderer = {
-	name: 'youtube_iframe',
-
-	options: {
-		prefix: 'youtube_iframe',
-
-		youtube: {
-			autoplay: 0,
-			controls: 0,
-			disablekb: 1,
-			end: 0,
-			loop: 0,
-			modestbranding: 0,
-			playsinline: 0,
-			rel: 0,
-			showinfo: 0,
-			start: 0,
-			iv_load_policy: 3,
-
-			nocookie: false
-		}
-	},
-
-	canPlayType: function canPlayType(type) {
-		return ~['video/youtube', 'video/x-youtube'].indexOf(type.toLowerCase());
-	},
-
-	create: function create(mediaElement, options, mediaFiles) {
-
-		var youtube = {},
-		    apiStack = [],
-		    readyState = 4;
-
-		var youTubeApi = null,
-		    paused = true,
-		    ended = false,
-		    youTubeIframe = null,
-		    volume = 1;
-
-		youtube.options = options;
-		youtube.id = mediaElement.id + '_' + options.prefix;
-		youtube.mediaElement = mediaElement;
-
-		var props = _mejs2.default.html5media.properties,
-		    assignGettersSetters = function assignGettersSetters(propName) {
-
-			var capName = '' + propName.substring(0, 1).toUpperCase() + propName.substring(1);
-
-			youtube['get' + capName] = function () {
-				if (youTubeApi !== null) {
-					var value = null;
-
-					switch (propName) {
-						case 'currentTime':
-							return youTubeApi.getCurrentTime();
-						case 'duration':
-							return youTubeApi.getDuration();
-						case 'volume':
-							volume = youTubeApi.getVolume() / 100;
-							return volume;
-						case 'paused':
-							return paused;
-						case 'ended':
-							return ended;
-						case 'muted':
-							return youTubeApi.isMuted();
-						case 'buffered':
-							var percentLoaded = youTubeApi.getVideoLoadedFraction(),
-							    duration = youTubeApi.getDuration();
-							return {
-								start: function start() {
-									return 0;
-								},
-								end: function end() {
-									return percentLoaded * duration;
-								},
-								length: 1
-							};
-						case 'src':
-							return youTubeApi.getVideoUrl();
-						case 'readyState':
-							return readyState;
-					}
-
-					return value;
-				} else {
-					return null;
-				}
-			};
-
-			youtube['set' + capName] = function (value) {
-				if (youTubeApi !== null) {
-					switch (propName) {
-						case 'src':
-							var url = typeof value === 'string' ? value : value[0].src,
-							    _videoId = YouTubeApi.getYouTubeId(url);
-
-							if (mediaElement.originalNode.autoplay) {
-								youTubeApi.loadVideoById(_videoId);
-							} else {
-								youTubeApi.cueVideoById(_videoId);
-							}
-							break;
-						case 'currentTime':
-							youTubeApi.seekTo(value);
-							break;
-						case 'muted':
-							if (value) {
-								youTubeApi.mute();
-							} else {
-								youTubeApi.unMute();
-							}
-							setTimeout(function () {
-								var event = (0, _general.createEvent)('volumechange', youtube);
-								mediaElement.dispatchEvent(event);
-							}, 50);
-							break;
-						case 'volume':
-							volume = value;
-							youTubeApi.setVolume(value * 100);
-							setTimeout(function () {
-								var event = (0, _general.createEvent)('volumechange', youtube);
-								mediaElement.dispatchEvent(event);
-							}, 50);
-							break;
-						case 'readyState':
-							var event = (0, _general.createEvent)('canplay', youtube);
-							mediaElement.dispatchEvent(event);
-							break;
-						default:
-							
-							break;
-					}
-				} else {
-					apiStack.push({ type: 'set', propName: propName, value: value });
-				}
-			};
-		};
-
-		for (var i = 0, total = props.length; i < total; i++) {
-			assignGettersSetters(props[i]);
-		}
-
-		var methods = _mejs2.default.html5media.methods,
-		    assignMethods = function assignMethods(methodName) {
-			youtube[methodName] = function () {
-				if (youTubeApi !== null) {
-					switch (methodName) {
-						case 'play':
-							paused = false;
-							return youTubeApi.playVideo();
-						case 'pause':
-							paused = true;
-							return youTubeApi.pauseVideo();
-						case 'load':
-							return null;
-					}
-				} else {
-					apiStack.push({ type: 'call', methodName: methodName });
-				}
-			};
-		};
-
-		for (var _i = 0, _total = methods.length; _i < _total; _i++) {
-			assignMethods(methods[_i]);
-		}
-
-		var youtubeContainer = _document2.default.createElement('div');
-		youtubeContainer.id = youtube.id;
-
-		if (youtube.options.youtube.nocookie) {
-			mediaElement.originalNode.setAttribute('src', YouTubeApi.getYouTubeNoCookieUrl(mediaFiles[0].src));
-		}
-
-		mediaElement.originalNode.parentNode.insertBefore(youtubeContainer, mediaElement.originalNode);
-		mediaElement.originalNode.style.display = 'none';
-
-		var isAudio = mediaElement.originalNode.tagName.toLowerCase() === 'audio',
-		    height = isAudio ? '1' : mediaElement.originalNode.height,
-		    width = isAudio ? '1' : mediaElement.originalNode.width,
-		    videoId = YouTubeApi.getYouTubeId(mediaFiles[0].src),
-		    youtubeSettings = {
-			id: youtube.id,
-			containerId: youtubeContainer.id,
-			videoId: videoId,
-			height: height,
-			width: width,
-			playerVars: Object.assign({
-				controls: 0,
-				rel: 0,
-				disablekb: 1,
-				showinfo: 0,
-				modestbranding: 0,
-				html5: 1,
-				playsinline: 0,
-				start: 0,
-				end: 0,
-				iv_load_policy: 3
-			}, youtube.options.youtube),
-			origin: _window2.default.location.host,
-			events: {
-				onReady: function onReady(e) {
-					mediaElement.youTubeApi = youTubeApi = e.target;
-					mediaElement.youTubeState = {
-						paused: true,
-						ended: false
-					};
-
-					if (apiStack.length) {
-						for (var _i2 = 0, _total2 = apiStack.length; _i2 < _total2; _i2++) {
-
-							var stackItem = apiStack[_i2];
-
-							if (stackItem.type === 'set') {
-								var propName = stackItem.propName,
-								    capName = '' + propName.substring(0, 1).toUpperCase() + propName.substring(1);
-
-								youtube['set' + capName](stackItem.value);
-							} else if (stackItem.type === 'call') {
-								youtube[stackItem.methodName]();
-							}
-						}
-					}
-
-					youTubeIframe = youTubeApi.getIframe();
-
-					if (mediaElement.originalNode.getAttribute('muted')) {
-						youTubeApi.mute();
-					}
-
-					var events = ['mouseover', 'mouseout'],
-					    assignEvents = function assignEvents(e) {
-						var newEvent = (0, _general.createEvent)(e.type, youtube);
-						mediaElement.dispatchEvent(newEvent);
-					};
-
-					for (var _i3 = 0, _total3 = events.length; _i3 < _total3; _i3++) {
-						youTubeIframe.addEventListener(events[_i3], assignEvents, false);
-					}
-
-					var initEvents = ['rendererready', 'loadedmetadata', 'loadeddata', 'canplay'];
-
-					for (var _i4 = 0, _total4 = initEvents.length; _i4 < _total4; _i4++) {
-						var event = (0, _general.createEvent)(initEvents[_i4], youtube);
-						mediaElement.dispatchEvent(event);
-					}
-				},
-				onStateChange: function onStateChange(e) {
-					var events = [];
-
-					switch (e.data) {
-						case -1:
-							events = ['loadedmetadata'];
-							paused = true;
-							ended = false;
-							break;
-						case 0:
-							events = ['ended'];
-							paused = false;
-							ended = !youtube.options.youtube.loop;
-							if (!youtube.options.youtube.loop) {
-								youtube.stopInterval();
-							}
-							break;
-						case 1:
-							events = ['play', 'playing'];
-							paused = false;
-							ended = false;
-							youtube.startInterval();
-							break;
-						case 2:
-							events = ['pause'];
-							paused = true;
-							ended = false;
-							youtube.stopInterval();
-							break;
-						case 3:
-							events = ['progress'];
-							ended = false;
-							break;
-						case 5:
-							events = ['loadeddata', 'loadedmetadata', 'canplay'];
-							paused = true;
-							ended = false;
-							break;
-					}
-
-					for (var _i5 = 0, _total5 = events.length; _i5 < _total5; _i5++) {
-						var event = (0, _general.createEvent)(events[_i5], youtube);
-						mediaElement.dispatchEvent(event);
-					}
-				},
-				onError: function onError(e) {
-					var event = (0, _general.createEvent)('error', youtube);
-					event.data = e.data;
-					mediaElement.dispatchEvent(event);
-				}
-			}
-		};
-
-		if (isAudio) {
-			youtubeSettings.playerVars.playsinline = 1;
-		}
-
-		if (mediaElement.originalNode.autoplay) {
-			youtubeSettings.playerVars.autoplay = 1;
-		}
-
-		if (mediaElement.originalNode.loop) {
-			youtubeSettings.playerVars.loop = 1;
-		}
-
-		YouTubeApi.enqueueIframe(youtubeSettings);
-
-		youtube.onEvent = function (eventName, player, _youTubeState) {
-			if (_youTubeState !== null && _youTubeState !== undefined) {
-				mediaElement.youTubeState = _youTubeState;
-			}
-		};
-
-		youtube.setSize = function (width, height) {
-			if (youTubeApi !== null) {
-				youTubeApi.setSize(width, height);
-			}
-		};
-		youtube.hide = function () {
-			youtube.stopInterval();
-			youtube.pause();
-			if (youTubeIframe) {
-				youTubeIframe.style.display = 'none';
-			}
-		};
-		youtube.show = function () {
-			if (youTubeIframe) {
-				youTubeIframe.style.display = '';
-			}
-		};
-		youtube.destroy = function () {
-			youTubeApi.destroy();
-		};
-		youtube.interval = null;
-
-		youtube.startInterval = function () {
-			youtube.interval = setInterval(function () {
-				var event = (0, _general.createEvent)('timeupdate', youtube);
-				mediaElement.dispatchEvent(event);
-			}, 250);
-		};
-		youtube.stopInterval = function () {
-			if (youtube.interval) {
-				clearInterval(youtube.interval);
-			}
-		};
-
-		return youtube;
-	}
-};
-
-_window2.default.onYouTubePlayerAPIReady = function () {
-	YouTubeApi.iFrameReady();
-};
-
-_media.typeChecks.push(function (url) {
-	return (/\/\/(www\.youtube|youtu\.?be)/i.test(url) ? 'video/x-youtube' : null
-	);
-});
-
-_renderer.renderer.add(YouTubeIframeRenderer);
-
-},{"2":2,"27":27,"28":28,"29":29,"3":3,"7":7,"8":8}],26:[function(_dereq_,module,exports){
+},{"2":2,"20":20,"22":22,"3":3,"7":7,"8":8}],20:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -7667,7 +5817,7 @@ _mejs2.default.Features.isFullScreen = isFullScreen;
 _mejs2.default.Features.requestFullScreen = requestFullScreen;
 _mejs2.default.Features.cancelFullScreen = cancelFullScreen;
 
-},{"2":2,"3":3,"7":7}],27:[function(_dereq_,module,exports){
+},{"2":2,"3":3,"7":7}],21:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -7893,7 +6043,7 @@ _mejs2.default.Utils.visible = visible;
 _mejs2.default.Utils.ajax = ajax;
 _mejs2.default.Utils.loadScript = loadScript;
 
-},{"2":2,"3":3,"7":7}],28:[function(_dereq_,module,exports){
+},{"2":2,"3":3,"7":7}],22:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8029,7 +6179,7 @@ _mejs2.default.Utils.createEvent = createEvent;
 _mejs2.default.Utils.isNodeAfter = isNodeAfter;
 _mejs2.default.Utils.isString = isString;
 
-},{"7":7}],29:[function(_dereq_,module,exports){
+},{"7":7}],23:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8047,7 +6197,7 @@ var _mejs = _dereq_(7);
 
 var _mejs2 = _interopRequireDefault(_mejs);
 
-var _general = _dereq_(28);
+var _general = _dereq_(22);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -8152,7 +6302,7 @@ _mejs2.default.Utils.getTypeFromFile = getTypeFromFile;
 _mejs2.default.Utils.getExtension = getExtension;
 _mejs2.default.Utils.normalizeExtension = normalizeExtension;
 
-},{"28":28,"7":7}],30:[function(_dereq_,module,exports){
+},{"22":22,"7":7}],24:[function(_dereq_,module,exports){
 'use strict';
 
 var _document = _dereq_(2);
@@ -8305,7 +6455,7 @@ if (!window.Promise) {
 	}
 })(window.Node || window.Element);
 
-},{"2":2,"4":4}],31:[function(_dereq_,module,exports){
+},{"2":2,"4":4}],25:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -8540,4 +6690,4 @@ _mejs2.default.Utils.timeCodeToSeconds = timeCodeToSeconds;
 _mejs2.default.Utils.calculateTimeFormat = calculateTimeFormat;
 _mejs2.default.Utils.convertSMPTEtoSeconds = convertSMPTEtoSeconds;
 
-},{"7":7}]},{},[30,6,5,15,24,21,20,22,23,25,17,19,18,16,9,10,11,12,13,14]);
+},{"7":7}]},{},[24,6,5,15,19,18,16,17,9,10,11,12,13,14]);

@@ -740,6 +740,7 @@ Reference: http://blog.rrwd.nl/2015/04/04/the-screen-reader-text-class-why-and-h
 
 /* Start: Chromecast  */
 .mejs-chromecast-button > button {
+    --disconnected-color: #fff;
     background: none;
     display: inline-block;
 }

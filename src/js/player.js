@@ -157,13 +157,12 @@ export const config = {
 				32, // SPACE
 				179 // GOOGLE play/pause button
 			],
-			action: () => {
-
+			action: (player) => {
 				if (!IS_FIREFOX) {
-					if (t.paused || t.ended) {
-						t.play();
+					if (player.paused() || player.ended()) {
+						player.play();
 					} else {
-						t.pause();
+						player.pause();
 					}
 				}
 			}
@@ -181,10 +180,10 @@ export const config = {
 					player.startControlsTimer();
 				}
 
-				const newVolume = Math.min(t.getVolume() + 0.1, 1);
-				t.setVolume(newVolume);
+				const newVolume = Math.min(player.getVolume() + 0.1, 1);
+				player.setVolume(newVolume);
 				if (newVolume > 0) {
-					t.setMuted(false);
+					player.setMuted(false);
 				}
 
 			}
@@ -203,11 +202,11 @@ export const config = {
 					player.startControlsTimer();
 				}
 
-				const newVolume = Math.max(t.volume - 0.1, 0);
-				t.setVolume(newVolume);
+				const newVolume = Math.max(player.getVolume() - 0.1, 0);
+				player.setVolume(newVolume);
 
 				if (newVolume <= 0.1) {
-					t.setMuted(true);
+					player.setMuted(true);
 				}
 
 			}
@@ -217,16 +216,16 @@ export const config = {
 				37, // LEFT
 				227 // Google TV rewind
 			],
-			action: (player, media) => {
-				if (!isNaN(media.duration) && media.duration > 0) {
+			action: (player) => {
+				if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
 					if (player.isVideo) {
 						player.showControls();
 						player.startControlsTimer();
 					}
 
 					// 5%
-					const newTime = Math.max(media.currentTime - player.options.defaultSeekBackwardInterval(media), 0);
-					media.setCurrentTime(newTime);
+					const newTime = Math.max(player.getCurrentTime() - player.options.defaultSeekBackwardInterval(player), 0);
+					player.setCurrentTime(newTime);
 				}
 			}
 		},
@@ -235,17 +234,16 @@ export const config = {
 				39, // RIGHT
 				228 // Google TV forward
 			],
-			action: (player, media) => {
-
-				if (!isNaN(media.duration) && media.duration > 0) {
+			action: (player) => {
+				if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
 					if (player.isVideo) {
 						player.showControls();
 						player.startControlsTimer();
 					}
 
 					// 5%
-					const newTime = Math.min(media.currentTime + player.options.defaultSeekForwardInterval(media), media.duration);
-					media.setCurrentTime(newTime);
+					const newTime = Math.min(player.getCurrentTime() + player.options.defaultSeekForwardInterval(player), player.getDuration());
+					player.setCurrentTime(newTime);
 				}
 			}
 		},
@@ -266,7 +264,6 @@ export const config = {
 		{
 			keys: [77], // M
 			action: (player) => {
-
 				player.container.querySelector(`.${config.classPrefix}volume-slider`).style.display = '';
 				if (player.isVideo) {
 					player.showControls();
@@ -632,8 +629,28 @@ class MediaElementPlayer {
 		this.remotePlayer = new cast.framework.RemotePlayer();
 		this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
 		this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
-			this._switchPlayer.bind(this)
-		);
+			this._switchPlayer.bind(this));
+
+		const context = cast.framework.CastContext.getInstance();
+		context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
+	}
+
+	/**
+	 *
+	 * @param event
+	 * @private
+	 */
+	_checkCastButtonStatus (event) {
+		if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
+		} else {
+			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
+		}
+
+		setTimeout(() => {
+			this.setPlayerSize(this.width, this.height);
+			this.setControlsSize();
+		}, 0);
 	}
 
 	/**
@@ -644,21 +661,7 @@ class MediaElementPlayer {
 		this.proxy.pause();
 		if (cast && cast.framework) {
 			const context = cast.framework.CastContext.getInstance();
-
-			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, (e) => {
-				if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-					this.chromecastLayer.style.display = 'none';
-					this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
-				} else {
-					this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
-					this.chromecastLayer.style.display = '';
-				}
-
-				setTimeout(() => {
-					this.setPlayerSize(this.width, this.height);
-					this.setControlsSize();
-				}, 0);
-			});
+			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 
 			if (this.remotePlayer.isConnected) {
 				this._setupRemotePlayer();
@@ -672,9 +675,6 @@ class MediaElementPlayer {
 		this.proxy = new DefaultPlayer(this.media, this.isVideo, this.options.classPrefix);
 		if (this.chromecastLayer) {
 			this.chromecastLayer.style.display = 'none';
-		}
-		if (this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`)) {
-			this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
 		}
 		this.setCurrentTime(this.currentMediaTime);
 		if (this.getCurrentTime() > 0 && !IS_IOS && !IS_ANDROID) {
@@ -695,22 +695,8 @@ class MediaElementPlayer {
 			deviceInfo = this.layers.querySelector(`.${this.options.classPrefix}chromecast-info`).querySelector('.device')
 		;
 
-		context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, (e) => {
-			if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-				deviceInfo.innerText = '';
-				this.chromecastLayer.style.display = 'none';
-				this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = 'none';
-			} else {
-				deviceInfo.innerText = castSession.getCastDevice().friendlyName;
-				this.controls.querySelector(`.${this.options.classPrefix}chromecast-button`).style.display = '';
-				this.chromecastLayer.style.display = '';
-			}
-
-			setTimeout(() => {
-				this.setPlayerSize(this.width, this.height);
-				this.setControlsSize();
-			}, 0);
-		});
+		deviceInfo.innerText = castSession.getCastDevice().friendlyName;
+		this.chromecastLayer.style.display = '';
 
 		if (this.options.cast.enableTracks === true) {
 			const captions = t.captionsButton !== undefined ?
@@ -734,7 +720,7 @@ class MediaElementPlayer {
 		}
 
 		this.media.addEventListener('timeupdate', () => {
-			this.currentMediaTime = this.media.getCurrentTime();
+			this.currentMediaTime = this.getCurrentTime();
 		});
 	}
 
@@ -788,7 +774,7 @@ class MediaElementPlayer {
 
 		if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls ||
 			(t.paused() && t.readyState() === 4 && ((!t.options.hideVideoControlsOnLoad &&
-			t.media.currentTime <= 0) || (!t.options.hideVideoControlsOnPause && t.media.currentTime > 0))) ||
+			t.getCurrentTime() <= 0) || (!t.options.hideVideoControlsOnPause && t.getCurrentTime() > 0))) ||
 			(t.isVideo && !t.options.hideVideoControlsOnLoad && !t.readyState()) ||
 			t.ended())) {
 			return;
@@ -972,9 +958,9 @@ class MediaElementPlayer {
 							pressed = button.getAttribute('aria-pressed')
 						;
 
-						if (t.media.paused && pressed) {
+						if (t.paused() && pressed) {
 							t.pause();
-						} else if (t.media.paused) {
+						} else if (t.paused()) {
 							t.play();
 						} else {
 							t.pause();
@@ -1027,7 +1013,7 @@ class MediaElementPlayer {
 					});
 					t.container.addEventListener('mouseleave', () => {
 						if (t.controlsEnabled) {
-							if (!t.media.paused && !t.options.alwaysShowControls) {
+							if (!t.paused() && !t.options.alwaysShowControls) {
 								t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 							}
 						}
@@ -1070,7 +1056,7 @@ class MediaElementPlayer {
 					if (mejs.players.hasOwnProperty(playerIndex)) {
 						const p = mejs.players[playerIndex];
 
-						if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused && !p.ended) {
+						if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused() && !p.ended()) {
 							p.pause();
 							p.hasFocus = false;
 						}
@@ -1082,7 +1068,7 @@ class MediaElementPlayer {
 			t.media.addEventListener('ended', () => {
 				if (t.options.autoRewind) {
 					try {
-						t.media.setCurrentTime(0);
+						t.setCurrentTime(0);
 						// Fixing an Android stock browser bug, where "seeked" isn't fired correctly after
 						// ending the video and jumping to the beginning
 						setTimeout(() => {
@@ -1099,7 +1085,7 @@ class MediaElementPlayer {
 				if (typeof t.media.renderer.stop === 'function') {
 					t.media.renderer.stop();
 				} else {
-					t.media.pause();
+					t.pause();
 				}
 
 				if (t.setProgressRail) {
@@ -1119,7 +1105,7 @@ class MediaElementPlayer {
 			// resize on the first play
 			t.media.addEventListener('loadedmetadata', () => {
 
-				calculateTimeFormat(t.duration, t.options, t.options.framesPerSecond || 25);
+				calculateTimeFormat(t.getDuration(), t.options, t.options.framesPerSecond || 25);
 
 				if (t.updateDuration) {
 					t.updateDuration();
@@ -1174,7 +1160,7 @@ class MediaElementPlayer {
 					if (e.relatedTarget) {
 						if (t.keyboardAction && !e.relatedTarget.closest(`.${t.options.classPrefix}container`)) {
 							t.keyboardAction = false;
-							if (t.isVideo && !t.options.alwaysShowControls && !t.media.paused) {
+							if (t.isVideo && !t.options.alwaysShowControls && !t.paused()) {
 								t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 							}
 						}
@@ -1625,10 +1611,10 @@ class MediaElementPlayer {
 			layer.className = `${t.options.classPrefix}iframe-overlay`;
 			layer.addEventListener('click', (e) => {
 				if (t.options.clickToPlayPause) {
-					if (t.media.paused) {
-						t.media.play();
+					if (t.paused()) {
+						t.play();
 					} else {
-						t.media.pause();
+						t.pause();
 					}
 
 					e.preventDefault();
@@ -2059,6 +2045,7 @@ class MediaElementPlayer {
 		return this.proxy.muted();
 	}
 
+	// @todo CHECK THIS
 	ended () {
 		return this.proxy.ended();
 	}
@@ -2110,12 +2097,12 @@ class MediaElementPlayer {
 		;
 
 		// Stop completely media playing
-		if (!t.media.paused) {
-			t.media.pause();
+		if (!t.paused()) {
+			t.pause();
 		}
 
-		const src = t.media.getSrc();
-		t.media.setSrc('');
+		const src = t.getSrc();
+		t.setSrc('');
 
 		// invoke features cleanup
 		for (const featureIndex in t.options.features) {

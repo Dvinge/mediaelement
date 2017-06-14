@@ -3456,13 +3456,12 @@ var config = exports.config = {
 
 	keyActions: [{
 		keys: [32, 179],
-		action: function action() {
-
+		action: function action(player) {
 			if (!_constants.IS_FIREFOX) {
-				if (t.paused || t.ended) {
-					t.play();
+				if (player.paused() || player.ended()) {
+					player.play();
 				} else {
-					t.pause();
+					player.pause();
 				}
 			}
 		}
@@ -3478,10 +3477,10 @@ var config = exports.config = {
 				player.startControlsTimer();
 			}
 
-			var newVolume = Math.min(t.getVolume() + 0.1, 1);
-			t.setVolume(newVolume);
+			var newVolume = Math.min(player.getVolume() + 0.1, 1);
+			player.setVolume(newVolume);
 			if (newVolume > 0) {
-				t.setMuted(false);
+				player.setMuted(false);
 			}
 		}
 	}, {
@@ -3497,38 +3496,37 @@ var config = exports.config = {
 				player.startControlsTimer();
 			}
 
-			var newVolume = Math.max(t.volume - 0.1, 0);
-			t.setVolume(newVolume);
+			var newVolume = Math.max(player.getVolume() - 0.1, 0);
+			player.setVolume(newVolume);
 
 			if (newVolume <= 0.1) {
-				t.setMuted(true);
+				player.setMuted(true);
 			}
 		}
 	}, {
 		keys: [37, 227],
-		action: function action(player, media) {
-			if (!isNaN(media.duration) && media.duration > 0) {
+		action: function action(player) {
+			if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
 				if (player.isVideo) {
 					player.showControls();
 					player.startControlsTimer();
 				}
 
-				var newTime = Math.max(media.currentTime - player.options.defaultSeekBackwardInterval(media), 0);
-				media.setCurrentTime(newTime);
+				var newTime = Math.max(player.getCurrentTime() - player.options.defaultSeekBackwardInterval(player), 0);
+				player.setCurrentTime(newTime);
 			}
 		}
 	}, {
 		keys: [39, 228],
-		action: function action(player, media) {
-
-			if (!isNaN(media.duration) && media.duration > 0) {
+		action: function action(player) {
+			if (!isNaN(player.getDuration()) && player.getDuration() > 0) {
 				if (player.isVideo) {
 					player.showControls();
 					player.startControlsTimer();
 				}
 
-				var newTime = Math.min(media.currentTime + player.options.defaultSeekForwardInterval(media), media.duration);
-				media.setCurrentTime(newTime);
+				var newTime = Math.min(player.getCurrentTime() + player.options.defaultSeekForwardInterval(player), player.getDuration());
+				player.setCurrentTime(newTime);
 			}
 		}
 	}, {
@@ -3547,7 +3545,6 @@ var config = exports.config = {
 	}, {
 		keys: [77],
 		action: function action(player) {
-
 			player.container.querySelector('.' + config.classPrefix + 'volume-slider').style.display = '';
 			if (player.isVideo) {
 				player.showControls();
@@ -3836,30 +3833,33 @@ var MediaElementPlayer = function () {
 			this.remotePlayer = new cast.framework.RemotePlayer();
 			this.remotePlayerController = new cast.framework.RemotePlayerController(this.remotePlayer);
 			this.remotePlayerController.addEventListener(cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED, this._switchPlayer.bind(this));
+
+			var context = cast.framework.CastContext.getInstance();
+			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
+		}
+	}, {
+		key: '_checkCastButtonStatus',
+		value: function _checkCastButtonStatus(event) {
+			var _this = this;
+
+			if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
+			} else {
+				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = '';
+			}
+
+			setTimeout(function () {
+				_this.setPlayerSize(_this.width, _this.height);
+				_this.setControlsSize();
+			}, 0);
 		}
 	}, {
 		key: '_switchPlayer',
 		value: function _switchPlayer() {
-			var _this = this;
-
 			this.proxy.pause();
 			if (cast && cast.framework) {
 				var context = cast.framework.CastContext.getInstance();
-
-				context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, function (e) {
-					if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-						_this.chromecastLayer.style.display = 'none';
-						_this.controls.querySelector('.' + _this.options.classPrefix + 'chromecast-button').style.display = 'none';
-					} else {
-						_this.controls.querySelector('.' + _this.options.classPrefix + 'chromecast-button').style.display = '';
-						_this.chromecastLayer.style.display = '';
-					}
-
-					setTimeout(function () {
-						_this.setPlayerSize(_this.width, _this.height);
-						_this.setControlsSize();
-					}, 0);
-				});
+				context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, this._checkCastButtonStatus.bind(this));
 
 				if (this.remotePlayer.isConnected) {
 					this._setupRemotePlayer();
@@ -3874,9 +3874,6 @@ var MediaElementPlayer = function () {
 			this.proxy = new _default2.default(this.media, this.isVideo, this.options.classPrefix);
 			if (this.chromecastLayer) {
 				this.chromecastLayer.style.display = 'none';
-			}
-			if (this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button')) {
-				this.controls.querySelector('.' + this.options.classPrefix + 'chromecast-button').style.display = 'none';
 			}
 			this.setCurrentTime(this.currentMediaTime);
 			if (this.getCurrentTime() > 0 && !_constants.IS_IOS && !_constants.IS_ANDROID) {
@@ -3894,22 +3891,8 @@ var MediaElementPlayer = function () {
 			    castSession = context.getCurrentSession(),
 			    deviceInfo = this.layers.querySelector('.' + this.options.classPrefix + 'chromecast-info').querySelector('.device');
 
-			context.addEventListener(cast.framework.CastContextEventType.CAST_STATE_CHANGED, function (e) {
-				if (e.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-					deviceInfo.innerText = '';
-					_this2.chromecastLayer.style.display = 'none';
-					_this2.controls.querySelector('.' + _this2.options.classPrefix + 'chromecast-button').style.display = 'none';
-				} else {
-					deviceInfo.innerText = castSession.getCastDevice().friendlyName;
-					_this2.controls.querySelector('.' + _this2.options.classPrefix + 'chromecast-button').style.display = '';
-					_this2.chromecastLayer.style.display = '';
-				}
-
-				setTimeout(function () {
-					_this2.setPlayerSize(_this2.width, _this2.height);
-					_this2.setControlsSize();
-				}, 0);
-			});
+			deviceInfo.innerText = castSession.getCastDevice().friendlyName;
+			this.chromecastLayer.style.display = '';
 
 			if (this.options.cast.enableTracks === true) {
 				(function () {
@@ -3936,7 +3919,7 @@ var MediaElementPlayer = function () {
 			}
 
 			this.media.addEventListener('timeupdate', function () {
-				_this2.currentMediaTime = _this2.media.getCurrentTime();
+				_this2.currentMediaTime = _this2.getCurrentTime();
 			});
 		}
 	}, {
@@ -3995,7 +3978,7 @@ var MediaElementPlayer = function () {
 
 			doAnimation = doAnimation === undefined || doAnimation;
 
-			if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls || t.paused() && t.readyState() === 4 && (!t.options.hideVideoControlsOnLoad && t.media.currentTime <= 0 || !t.options.hideVideoControlsOnPause && t.media.currentTime > 0) || t.isVideo && !t.options.hideVideoControlsOnLoad && !t.readyState() || t.ended())) {
+			if (forceHide !== true && (!t.controlsAreVisible || t.options.alwaysShowControls || t.paused() && t.readyState() === 4 && (!t.options.hideVideoControlsOnLoad && t.getCurrentTime() <= 0 || !t.options.hideVideoControlsOnPause && t.getCurrentTime() > 0) || t.isVideo && !t.options.hideVideoControlsOnLoad && !t.readyState() || t.ended())) {
 				return;
 			}
 
@@ -4156,9 +4139,9 @@ var MediaElementPlayer = function () {
 							var button = t.container.querySelector('.' + t.options.classPrefix + 'overlay-button'),
 							    pressed = button.getAttribute('aria-pressed');
 
-							if (t.media.paused && pressed) {
+							if (t.paused() && pressed) {
 								t.pause();
-							} else if (t.media.paused) {
+							} else if (t.paused()) {
 								t.play();
 							} else {
 								t.pause();
@@ -4204,7 +4187,7 @@ var MediaElementPlayer = function () {
 						});
 						t.container.addEventListener('mouseleave', function () {
 							if (t.controlsEnabled) {
-								if (!t.media.paused && !t.options.alwaysShowControls) {
+								if (!t.paused() && !t.options.alwaysShowControls) {
 									t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 								}
 							}
@@ -4238,7 +4221,7 @@ var MediaElementPlayer = function () {
 						if (_mejs2.default.players.hasOwnProperty(playerIndex)) {
 							var p = _mejs2.default.players[playerIndex];
 
-							if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused && !p.ended) {
+							if (p.id !== t.id && t.options.pauseOtherPlayers && !p.paused() && !p.ended()) {
 								p.pause();
 								p.hasFocus = false;
 							}
@@ -4249,7 +4232,7 @@ var MediaElementPlayer = function () {
 				t.media.addEventListener('ended', function () {
 					if (t.options.autoRewind) {
 						try {
-							t.media.setCurrentTime(0);
+							t.setCurrentTime(0);
 
 							setTimeout(function () {
 								var loadingElement = t.container.querySelector('.' + t.options.classPrefix + 'overlay-loading');
@@ -4265,7 +4248,7 @@ var MediaElementPlayer = function () {
 					if (typeof t.media.renderer.stop === 'function') {
 						t.media.renderer.stop();
 					} else {
-						t.media.pause();
+						t.pause();
 					}
 
 					if (t.setProgressRail) {
@@ -4284,7 +4267,7 @@ var MediaElementPlayer = function () {
 
 				t.media.addEventListener('loadedmetadata', function () {
 
-					(0, _time.calculateTimeFormat)(t.duration, t.options, t.options.framesPerSecond || 25);
+					(0, _time.calculateTimeFormat)(t.getDuration(), t.options, t.options.framesPerSecond || 25);
 
 					if (t.updateDuration) {
 						t.updateDuration();
@@ -4334,7 +4317,7 @@ var MediaElementPlayer = function () {
 						if (e.relatedTarget) {
 							if (t.keyboardAction && !e.relatedTarget.closest('.' + t.options.classPrefix + 'container')) {
 								t.keyboardAction = false;
-								if (t.isVideo && !t.options.alwaysShowControls && !t.media.paused) {
+								if (t.isVideo && !t.options.alwaysShowControls && !t.paused()) {
 									t.startControlsTimer(t.options.controlsTimeoutMouseLeave);
 								}
 							}
@@ -4734,10 +4717,10 @@ var MediaElementPlayer = function () {
 				layer.className = t.options.classPrefix + 'iframe-overlay';
 				layer.addEventListener('click', function (e) {
 					if (t.options.clickToPlayPause) {
-						if (t.media.paused) {
-							t.media.play();
+						if (t.paused()) {
+							t.play();
 						} else {
-							t.media.pause();
+							t.pause();
 						}
 
 						e.preventDefault();
@@ -5196,12 +5179,12 @@ var MediaElementPlayer = function () {
 			var t = this,
 			    rendererName = t.media.rendererName;
 
-			if (!t.media.paused) {
-				t.media.pause();
+			if (!t.paused()) {
+				t.pause();
 			}
 
-			var src = t.media.getSrc();
-			t.media.setSrc('');
+			var src = t.getSrc();
+			t.setSrc('');
 
 			for (var featureIndex in t.options.features) {
 				var feature = t.options.features[featureIndex];

@@ -2130,6 +2130,9 @@ class MediaElementPlayer {
 	}
 
 	setSrc (src) {
+		if (!this.controlsEnabled) {
+			this.enableControls();
+		}
 		this.proxy.setSrc(src);
 	}
 

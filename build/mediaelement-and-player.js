@@ -767,7 +767,6 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 	};
 
 	t.mediaElement.generateError = function (message, urlList) {
-
 		message = message || '';
 		urlList = Array.isArray(urlList) ? urlList : [];
 
@@ -857,10 +856,6 @@ var MediaElement = function MediaElement(idOrNode, options, sources) {
 		}
 
 		t.mediaElement.originalNode.setAttribute('src', mediaFiles[0].src || '');
-
-		if (t.mediaElement.querySelector('.me_cannotplay')) {
-			t.mediaElement.querySelector('.me_cannotplay').remove();
-		}
 
 		if (renderInfo === null && mediaFiles[0].src) {
 			t.mediaElement.generateError('No renderer found', mediaFiles);
@@ -5189,6 +5184,9 @@ var MediaElementPlayer = function () {
 	}, {
 		key: 'setSrc',
 		value: function setSrc(src) {
+			if (!this.controlsEnabled) {
+				this.enableControls();
+			}
 			this.proxy.setSrc(src);
 		}
 	}, {

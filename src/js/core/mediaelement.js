@@ -272,7 +272,6 @@ class MediaElement {
 		 * @param {Object[]} urlList
 		 */
 		t.mediaElement.generateError = (message, urlList) => {
-
 			message = message || '';
 			urlList = Array.isArray(urlList) ? urlList : [];
 
@@ -378,10 +377,6 @@ class MediaElement {
 				}
 
 				t.mediaElement.originalNode.setAttribute('src', (mediaFiles[0].src || ''));
-
-				if (t.mediaElement.querySelector('.me_cannotplay')) {
-					t.mediaElement.querySelector('.me_cannotplay').remove();
-				}
 
 				// did we find a renderer?
 				// At least there must be a media in the `mediaFiles` since the media tag can come up an

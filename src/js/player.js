@@ -118,6 +118,8 @@ export const config = {
 	pauseOtherPlayers: true,
 	// Number of decimal places to show if frames are shown
 	secondsDecimalLength: 0,
+	// If error happens, set up HTML message
+	customError: '',
 	// Chromecast configuration
 	cast: {
 		/**
@@ -1232,6 +1234,42 @@ class MediaElementPlayer {
 		if (t.options.error) {
 			t.options.error(e, media, node);
 		}
+
+		// Remove prior error message
+		if (t.container.querySelector(`.${t.options.classPrefix}cannotplay`)) {
+			t.container.querySelector(`.${t.options.classPrefix}cannotplay`).remove();
+		}
+
+		const errorContainer = document.createElement('div');
+		errorContainer.className = `${t.options.classPrefix}cannotplay`;
+		errorContainer.style.width = '100%';
+		errorContainer.style.height = '100%';
+
+		let errorContent = t.options.customError;
+
+		if (!errorContent) {
+			const poster = t.media.originalNode.getAttribute('poster');
+			if (poster) {
+				errorContent += `<img src="${poster}" width="100%" height="100%" alt="${mejs.i18n.t('mejs.download-file')}">`;
+			}
+
+			if (e.message) {
+				errorContent += `<p>${e.message}</p>`;
+			}
+
+			if (e.urls) {
+				for (let i = 0, total = e.urls.length; i < total; i++) {
+					const url = e.urls[i];
+					errorContent += `<a href="${url.src}" data-type="${url.type}"><span>${mejs.i18n.t('mejs.download-file')}: ${url.src}</span></a>`;
+				}
+			}
+		}
+
+		if (errorContent && t.layers.querySelector(`.${t.options.classPrefix}overlay-error`)) {
+			errorContainer.innerHTML = errorContent;
+			t.layers.querySelector(`.${t.options.classPrefix}overlay-error`).innerHTML = errorContainer.outerHTML;
+			t.layers.querySelector(`.${t.options.classPrefix}overlay-error`).parentNode.style.display = 'block';
+		}
 	}
 
 	setPlayerSize (width, height) {
@@ -1887,8 +1925,8 @@ class MediaElementPlayer {
 		});
 
 		layers.appendChild(bigPlay);
-		let hasError = false;
 
+		let hasError = false;
 		if (t.media.rendererName !== null && ((/(youtube|facebook)/i.test(t.media.rendererName) &&
 			!(player.media.originalNode.getAttribute('poster') || player.options.poster)) || IS_STOCK_ANDROID)) {
 			bigPlay.style.display = 'none';
@@ -1901,6 +1939,7 @@ class MediaElementPlayer {
 				buffer().style.display = 'none';
 			}
 			error.style.display = 'none';
+			hasError = false;
 		});
 		media.addEventListener('playing', () => {
 			bigPlay.style.display = 'none';
@@ -1909,6 +1948,7 @@ class MediaElementPlayer {
 				buffer().style.display = 'none';
 			}
 			error.style.display = 'none';
+			hasError = false;
 		});
 		media.addEventListener('seeking', () => {
 			bigPlay.style.display = 'none';
@@ -1916,28 +1956,32 @@ class MediaElementPlayer {
 			if (buffer() !== null) {
 				buffer().style.display = '';
 			}
+			hasError = false;
 		});
 		media.addEventListener('seeked', () => {
-			bigPlay.style.display = media.paused && !IS_STOCK_ANDROID ? '' : 'none';
+			bigPlay.style.display = t.paused() && !IS_STOCK_ANDROID ? '' : 'none';
 			loading.style.display = 'none';
 			if (buffer() !== null) {
 				buffer().style.display = '';
 			}
+			hasError = false;
 		});
 		media.addEventListener('pause', () => {
 			loading.style.display = 'none';
-			if (!IS_STOCK_ANDROID || !hasError) {
+			if (!IS_STOCK_ANDROID && !hasError) {
 				bigPlay.style.display = '';
 			}
 			if (buffer() !== null) {
 				buffer().style.display = 'none';
 			}
+			hasError = false;
 		});
 		media.addEventListener('waiting', () => {
 			loading.style.display = '';
 			if (buffer() !== null) {
 				buffer().style.display = '';
 			}
+			hasError = false;
 		});
 
 		// show/hide loading
@@ -1958,6 +2002,7 @@ class MediaElementPlayer {
 					}
 				}, 300);
 			}
+			hasError = false;
 		});
 		media.addEventListener('canplay', () => {
 			loading.style.display = 'none';
@@ -1966,27 +2011,23 @@ class MediaElementPlayer {
 			}
 			// Clear timeout inside 'loadeddata' to prevent 'canplay' from firing twice
 			clearTimeout(media.canplayTimeout);
+			hasError = false;
 		});
 
 		// error handling
 		media.addEventListener('error', (e) => {
 			t._handleError(e, t.media, t.node);
-			hasError = true;
 			loading.style.display = 'none';
 			bigPlay.style.display = 'none';
 			if (buffer() !== null) {
 				buffer().style.display = 'none';
 			}
-
-			// error.style.display = 'block';
-			// error.querySelector(`.${t.options.classPrefix}overlay-error`).innerHTML =
-			// 	media.querySelector('.me_cannotplay').innerHTML;
-			//
-			// media.querySelector('.me_cannotplay').remove();
+			hasError = true;
 		});
 
 		media.addEventListener('keydown', (e) => {
 			t.onkeydown(player, media, e);
+			hasError = false;
 		});
 	}
 
@@ -2052,7 +2093,6 @@ class MediaElementPlayer {
 		return this.proxy.muted();
 	}
 
-	// @todo CHECK THIS
 	ended () {
 		return this.proxy.ended();
 	}

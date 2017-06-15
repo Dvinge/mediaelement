@@ -49,12 +49,7 @@ class MediaElement {
 			 * Flag in `<object>` and `<embed>` to determine whether to use local or CDN
 			 * Possible values: 'always' (CDN version) or 'sameDomain' (local files)
 			 */
-			shimScriptAccess: 'sameDomain',
-			/**
-			 * If error happens, set up HTML message
-			 * @type {String}
-			 */
-			customError: ''
+			shimScriptAccess: 'sameDomain'
 		};
 
 		options = Object.assign(t.defaults, options);
@@ -276,46 +271,15 @@ class MediaElement {
 		 *
 		 * @param {Object[]} urlList
 		 */
-		t.mediaElement.processError = (message, urlList) => {
+		t.mediaElement.generateError = (message, urlList) => {
 
 			message = message || '';
 			urlList = Array.isArray(urlList) ? urlList : [];
 
-			// Remove prior error message
-			if (t.mediaElement.querySelector('.me_cannotplay')) {
-				t.mediaElement.querySelector('.me_cannotplay').remove();
-			}
-
-			const errorContainer = document.createElement('div');
-			errorContainer.className = 'me_cannotplay';
-			errorContainer.style.width = '100%';
-			errorContainer.style.height = '100%';
-
-			let errorContent = t.mediaElement.options.customError;
-
-			if (!errorContent) {
-
-				const poster = t.mediaElement.originalNode.getAttribute('poster');
-				if (poster) {
-					errorContent += `<img src="${poster}" width="100%" height="100%" alt="${mejs.i18n.t('mejs.download-file')}">`;
-				}
-
-				if (message) {
-					errorContent += `<p>${message}</p>`;
-				}
-
-				for (let i = 0, total = urlList.length; i < total; i++) {
-					const url = urlList[i];
-					errorContent += `<a href="${url.src}" data-type="${url.type}"><span>${mejs.i18n.t('mejs.download-file')}: ${url.src}</span></a>`;
-				}
-			}
-
-			errorContainer.innerHTML = errorContent;
 			const event = createEvent('error', t.mediaElement);
 			event.message = message;
+			event.urls = urlList;
 			t.mediaElement.dispatchEvent(event);
-
-			t.mediaElement.originalNode.parentNode.insertBefore(errorContainer, t.mediaElement.originalNode);
 			t.mediaElement.originalNode.style.display = 'none';
 			error = true;
 		};
@@ -423,7 +387,7 @@ class MediaElement {
 				// At least there must be a media in the `mediaFiles` since the media tag can come up an
 				// empty source for starters
 				if (renderInfo === null && mediaFiles[0].src) {
-					t.mediaElement.processError('No renderer found', mediaFiles);
+					t.mediaElement.generateError('No renderer found', mediaFiles);
 					return;
 				}
 
@@ -441,30 +405,30 @@ class MediaElement {
 									setTimeout(() => {
 										const response = t.mediaElement.renderer[methodName](args);
 										if (response && typeof response.then === 'function') {
-											response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+											response.catch((e) => t.mediaElement.generateError(e, mediaFiles));
 										}
 									}, 300);
 								}).catch((e) => {
-									t.mediaElement.processError(e, mediaFiles);
+									t.mediaElement.generateError(e, mediaFiles);
 								});
 							} else {
 								try {
 									const response = t.mediaElement.renderer[methodName](args);
 									if (response && typeof response.then === 'function') {
-										response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+										response.catch((e) => t.mediaElement.generateError(e, mediaFiles));
 									}
 								} catch (e) {
-									t.mediaElement.processError(e, mediaFiles);
+									t.mediaElement.generateError(e, mediaFiles);
 								}
 							}
 						} else {
 							try {
 								const response = t.mediaElement.renderer[methodName](args);
 								if (response && typeof response.then === 'function') {
-									response.catch((e) => t.mediaElement.processError(e, mediaFiles));
+									response.catch((e) => t.mediaElement.generateError(e, mediaFiles));
 								}
 							} catch (e) {
-								t.mediaElement.processError(e, mediaFiles);
+								t.mediaElement.generateError(e, mediaFiles);
 							}
 						}
 					}

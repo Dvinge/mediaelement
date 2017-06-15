@@ -43,6 +43,7 @@ In general, `MediaElement.js` supports **IE11+, MS Edge, Chrome, Firefox, Safari
 ## * IMPORTANT CHANGES on `4.2.0` version
 
 1. Dropping support for IE9 and IE10.
+
 2. Chromecast is now integrated as part of the `MediaElement` core and not as a plugin; read more about how to migrate from using the plugin to this new approach
 by clicking [here](docs/api.md#chromecast).
 
